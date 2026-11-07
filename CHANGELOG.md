@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 0.2.0
 
 - Camera scenes from the webcam: `camera` (dot matrix), `popart` (posterised triptych), `motion`
   (trails where things move) and `slitscan` (time displacement). The camera opens only while one
