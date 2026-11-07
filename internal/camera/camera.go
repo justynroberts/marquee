@@ -28,6 +28,36 @@ type Frame struct {
 	Seq    uint64 // increases with every new camera frame
 	Err    error  // capture could not start (nil while starting or running)
 	Denied bool   // Err is ErrDenied
+
+	// Mask is the person segmentation, W*H values 0..255 (255 = person), when Mask was asked
+	// for and Vision produced one; nil otherwise.
+	Mask []uint8
+	// Hands are the hands Vision found, when Hands was asked for (at most two).
+	Hands []Hand
+}
+
+// Feature selects the Vision analyses LatestWith runs on each camera frame. They cost CPU, so
+// they run only while a scene keeps asking for them.
+type Feature int
+
+const (
+	Mask  Feature = 1 // person segmentation (Frame.Mask)
+	Hands Feature = 2 // hand pose (Frame.Hands)
+)
+
+// Point is a position in 0..1 frame coordinates (top-left origin, mirrored like the frame)
+// with Vision's confidence; Conf 0 means the point was not seen.
+type Point struct{ X, Y, Conf float64 }
+
+// Hand is one detected hand.
+type Hand struct{ Index, Thumb, Wrist Point }
+
+// MaskAt reports whether the frame pixel (x, y) is part of a person.
+func (f Frame) MaskAt(x, y int) bool {
+	if f.Mask == nil || x < 0 || y < 0 || x >= f.W || y >= f.H {
+		return false
+	}
+	return f.Mask[y*f.W+x] >= 128
 }
 
 // At returns the pixel at (x, y), clamped to the frame.
@@ -52,12 +82,18 @@ var (
 	lastUse  time.Time
 	idleOnce sync.Once
 	buf      = make([]byte, maxW*maxH*3)
+	maskBuf  = make([]byte, maxW*maxH)
+	wanted   Feature
 	cur      Frame
 )
 
 // Latest returns the newest frame, opening the camera if it is not open. If opening fails it
 // is retried every few seconds (permission may be granted, or a camera plugged in, meanwhile).
-func Latest() Frame {
+func Latest() Frame { return LatestWith(0) }
+
+// LatestWith is Latest, also asking for the given Vision analyses on coming frames (and no
+// others). The first frames after a change may not carry them yet.
+func LatestWith(want Feature) Frame {
 	mu.Lock()
 	defer mu.Unlock()
 	lastUse = time.Now()
@@ -66,9 +102,16 @@ func Latest() Frame {
 		starting, lastTry = true, time.Now()
 		go open()
 	}
+	if want != wanted {
+		wanted = want
+		setWant(want)
+	}
 	if running {
-		if w, h, seq := grab(buf); seq != 0 && seq != cur.Seq {
-			cur = Frame{W: w, H: h, Pix: buf[:w*h*3], Seq: seq}
+		if w, h, seq, hasMask, hands := grab(buf, maskBuf); seq != 0 && seq != cur.Seq {
+			cur = Frame{W: w, H: h, Pix: buf[:w*h*3], Seq: seq, Hands: hands}
+			if hasMask {
+				cur.Mask = maskBuf[:w*h]
+			}
 		}
 	}
 	f := cur
@@ -96,6 +139,7 @@ func open() {
 	if time.Since(lastUse) > idleRelease { // the scene stopped while the camera was opening
 		running = false
 		stop()
+		wanted = 0
 	}
 }
 
@@ -105,6 +149,7 @@ func releaseWhenIdle() {
 		if running && time.Since(lastUse) > idleRelease {
 			running, cur = false, Frame{}
 			stop()
+			wanted = 0
 			slog.Info("camera released (no camera scene playing)")
 		}
 		mu.Unlock()
@@ -118,5 +163,6 @@ func Stop() {
 	if running {
 		running, cur = false, Frame{}
 		stop()
+		wanted = 0
 	}
 }

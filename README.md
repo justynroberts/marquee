@@ -50,7 +50,8 @@ keys). Logs go to `~/Library/Logs/Marquee/marquee.log`.
 - **Scenes**: matrix, terminal, fire, life, warp, plasma, rain, clock, bounce, fireworks,
   aquarium, drawn on a 275 x 66 grid of round LEDs.
 - **Audio visualisers**: spectrum, mirror, waterfall, scope, pulse and meter, from the microphone.
-- **Camera scenes**: camera, popart, motion and slitscan, from the webcam.
+- **Camera scenes**: camera, popart, motion and slitscan, from the webcam, and interactive ones
+  that see you: snowfall (settles on you), bubbles (pop them) and airpaint (pinch to draw).
 - **Message board** (`board`): `messages.txt`, one message per line, with colours, backgrounds,
   effects, fonts, sizes, animated sprites, colour emoji, live tokens such as `{time}`, `{cpu}` and
   `{weather}`, and green or amber phosphor themes. See [docs/BOARD.md](docs/BOARD.md).

@@ -60,6 +60,14 @@ if they show a message instead):
 | `popart` | Three posterised panels of the whole picture, in bold palettes that change every four seconds |
 | `motion` | Only what moves lights up, leaving trails that drift through the colours; a still room is dark |
 | `slitscan` | Time displacement: the centre column is live, and each column out is a frame older (about 11 s at the edges) |
+| `snowfall` | Snow falls and settles on your head and shoulders; move and it slides off or is shaken loose |
+| `bubbles` | Bubbles rise across the whole panel; touch one with any part of you to pop it. Counts your pops |
+| `airpaint` | Pinch thumb and index finger to draw light in the air; open them to lift the pen. Strokes fade over a few seconds; two hands draw in two colours |
+
+The interactive three use Apple's Vision framework on the Mac itself: person segmentation for
+`snowfall` and `bubbles`, hand pose for `airpaint`. It runs only while one of them plays, and
+nothing leaves the Mac. Stand back far enough that your head and shoulders are in frame; plain
+backgrounds and good light help.
 
 **Audio visualisers** listen to the microphone (see [Troubleshooting](#microphone) if they show a
 message instead):

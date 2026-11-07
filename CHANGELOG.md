@@ -5,6 +5,8 @@
 - Camera scenes from the webcam: `camera` (dot matrix), `popart` (posterised triptych), `motion`
   (trails where things move) and `slitscan` (time displacement). The camera opens only while one
   plays and is released 10 seconds after.
+- Interactive camera scenes using Vision on the Mac: `snowfall` (snow settles on your
+  silhouette), `bubbles` (touch to pop, with a counter) and `airpaint` (pinch to draw in the air).
 
 ## 0.1.0
 

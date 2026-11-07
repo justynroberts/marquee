@@ -26,7 +26,7 @@ client and the MCP server.
 | `internal/nowplaying` | Now Playing and karaoke screens; Music and Spotify polling through `osascript`; LRCLIB lyrics |
 | `internal/hud` | The HUD screen and the `Mirrored` transform |
 | `internal/feeds` | Weather (Open-Meteo), PagerDuty, Hacker News and RSS/Atom; registers board tokens |
-| `internal/camera` | Webcam capture through AVFoundation (`camera_darwin.m`): the capture queue box-filters each frame to 320 px wide, mirrored RGB; opened on first use off the render loop, released after 10 s idle |
+| `internal/camera` | Webcam capture through AVFoundation (`camera_darwin.m`): the capture queue box-filters each frame to 320 px wide, mirrored RGB, and runs Vision person segmentation and hand pose only when a scene asks (`LatestWith`); opened on first use off the render loop, released after 10 s idle |
 | `internal/audio` | Microphone capture (`malgo`, i.e. miniaudio), FFT, bands, beats and levels |
 | `internal/panel` | Supported models, handshake, frame protocol, JPEG encoding, 180° rotation, pacing |
 | `internal/usb` | Minimal cgo libusb binding: open by VID/PID, claim, bulk transfer, reset |

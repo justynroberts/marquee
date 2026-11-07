@@ -10,8 +10,9 @@ import (
 	"github.com/justynroberts/marquee/internal/led"
 )
 
-// CameraSource supplies frames to the camera scenes. Defaults to the shared camera.
-var CameraSource = camera.Latest
+// CameraSource supplies frames to the camera scenes, running the asked-for Vision analyses.
+// Defaults to the shared camera; tests replace it.
+var CameraSource = camera.LatestWith
 
 func init() {
 	Register("camera", "camera", "The webcam as a dot matrix, auto-levelled, mirrored like a selfie view", func() Scene { return &camView{} })
@@ -94,7 +95,7 @@ type camView struct {
 }
 
 func (c *camView) Draw(g *led.Grid, t, dt float64) {
-	f := CameraSource()
+	f := CameraSource(0)
 	if cameraProblem(g, f, t) {
 		return
 	}
@@ -140,7 +141,7 @@ var popPalettes = [][4]led.RGB{
 }
 
 func (p *popart) Draw(g *led.Grid, t, dt float64) {
-	f := CameraSource()
+	f := CameraSource(0)
 	if cameraProblem(g, f, t) {
 		return
 	}
@@ -203,7 +204,7 @@ type motion struct {
 }
 
 func (m *motion) Draw(g *led.Grid, t, dt float64) {
-	f := CameraSource()
+	f := CameraSource(0)
 	if cameraProblem(g, f, t) {
 		return
 	}
@@ -273,7 +274,7 @@ func newSlitscan() *slitscan {
 }
 
 func (s *slitscan) Draw(g *led.Grid, t, dt float64) {
-	f := CameraSource()
+	f := CameraSource(0)
 	if cameraProblem(g, f, t) {
 		return
 	}
