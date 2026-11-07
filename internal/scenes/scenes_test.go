@@ -42,12 +42,16 @@ func litCount(g *led.Grid) int {
 
 func TestAllScenes(t *testing.T) {
 	AudioSource = fakeAudio()
+	CameraSource = fakeCamera()
 	want := map[string]string{}
 	for _, s := range []string{"matrix", "terminal", "fire", "life", "warp", "plasma", "rain", "clock", "bounce", "fireworks", "aquarium", "dashboard"} {
 		want[s] = "scene"
 	}
 	for _, s := range []string{"mirror", "waterfall", "scope", "pulse", "meter", "spectrum"} {
 		want[s] = "audio"
+	}
+	for _, s := range []string{"camera", "popart", "motion", "slitscan"} {
+		want[s] = "camera"
 	}
 	for name, group := range want {
 		info, ok := Get(name)

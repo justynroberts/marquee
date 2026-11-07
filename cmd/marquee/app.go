@@ -16,6 +16,7 @@ import (
 
 	"github.com/justynroberts/marquee/internal/api"
 	"github.com/justynroberts/marquee/internal/audio"
+	"github.com/justynroberts/marquee/internal/camera"
 	"github.com/justynroberts/marquee/internal/engine"
 	"github.com/justynroberts/marquee/internal/feeds"
 	"github.com/justynroberts/marquee/internal/led"
@@ -219,6 +220,7 @@ func (a *App) Close() {
 	a.shutdownHTTP()
 	a.E.Stop()
 	audio.StopShared()
+	camera.Stop()
 	a.Log.Info("stopped")
 }
 

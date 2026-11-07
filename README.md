@@ -23,6 +23,7 @@ macOS asks for permissions the first time a feature needs them:
 | Permission | Asked when | Why |
 |---|---|---|
 | Microphone | an audio visualiser first plays | The visualisers analyse live sound. Nothing is recorded or sent anywhere. The microphone is released 10 seconds after the last visualiser stops. |
+| Camera | a camera scene first plays | The camera scenes draw the webcam on the panel. Nothing is recorded or sent anywhere. The camera is released 10 seconds after the last camera scene stops. |
 | Automation (Music, Spotify) | `nowplaying`, `karaoke` or the HUD first looks for a track | Marquee asks Music and Spotify what is playing. It never changes anything in them, and never launches a player that is not running. |
 | Local Network | you turn on **Allow Other Devices** | Other devices can then reach the panel, and Marquee advertises itself over Bonjour. |
 
@@ -49,6 +50,7 @@ keys). Logs go to `~/Library/Logs/Marquee/marquee.log`.
 - **Scenes**: matrix, terminal, fire, life, warp, plasma, rain, clock, bounce, fireworks,
   aquarium, drawn on a 275 x 66 grid of round LEDs.
 - **Audio visualisers**: spectrum, mirror, waterfall, scope, pulse and meter, from the microphone.
+- **Camera scenes**: camera, popart, motion and slitscan, from the webcam.
 - **Message board** (`board`): `messages.txt`, one message per line, with colours, backgrounds,
   effects, fonts, sizes, animated sprites, colour emoji, live tokens such as `{time}`, `{cpu}` and
   `{weather}`, and green or amber phosphor themes. See [docs/BOARD.md](docs/BOARD.md).

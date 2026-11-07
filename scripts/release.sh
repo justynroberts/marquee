@@ -74,6 +74,7 @@ cat > "$APPDIR/Contents/Info.plist" <<PLIST
   <key>LSArchitecturePriority</key><array><string>arm64</string></array>
   <key>NSHumanReadableCopyright</key><string>Made by FintonLabs. MIT licence. Includes FreeType, HarfBuzz and code ported from Pillow; see Resources.</string>
   <key>NSMicrophoneUsageDescription</key><string>Marquee listens to sound only while an audio visualiser is playing, to draw it on the panel. Nothing is recorded or sent anywhere.</string>
+  <key>NSCameraUsageDescription</key><string>Marquee uses the camera only while a camera scene is playing, to draw it on the panel. Nothing is recorded or sent anywhere.</string>
   <key>NSLocalNetworkUsageDescription</key><string>Marquee can let other devices on your network control the panel, and advertises itself so apps can find it.</string>
   <key>NSAppleEventsUsageDescription</key><string>Marquee asks Music and Spotify what is playing, to show the track on the panel. It never changes anything in them.</string>
   <key>NSBonjourServices</key><array><string>_marquee._tcp</string></array>

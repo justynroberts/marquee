@@ -26,6 +26,7 @@ client and the MCP server.
 | `internal/nowplaying` | Now Playing and karaoke screens; Music and Spotify polling through `osascript`; LRCLIB lyrics |
 | `internal/hud` | The HUD screen and the `Mirrored` transform |
 | `internal/feeds` | Weather (Open-Meteo), PagerDuty, Hacker News and RSS/Atom; registers board tokens |
+| `internal/camera` | Webcam capture through AVFoundation (`camera_darwin.m`): the capture queue box-filters each frame to 320 px wide, mirrored RGB; opened on first use off the render loop, released after 10 s idle |
 | `internal/audio` | Microphone capture (`malgo`, i.e. miniaudio), FFT, bands, beats and levels |
 | `internal/panel` | Supported models, handshake, frame protocol, JPEG encoding, 180° rotation, pacing |
 | `internal/usb` | Minimal cgo libusb binding: open by VID/PID, claim, bulk transfer, reset |
@@ -124,6 +125,7 @@ Other opt-in variables for looking at output by eye or hitting real services:
 |---|---|
 | `HUD_PNG=DIR` | `internal/hud` tests write each HUD case as a PNG |
 | `NOWPLAYING_PNG=/path/out.png` | `internal/nowplaying` writes sample Now Playing and lyrics frames |
+| `CAMERA_REAL=DIR` | `internal/scenes` `TestCameraReal` opens the real camera and writes a PNG per camera scene |
 | `NOWPLAYING_REAL=1` | `internal/nowplaying` tests talk to the real Music/Spotify and LRCLIB |
 
 `marquee render NAME --seconds 3 --out frame.png` renders any program offline for comparison.
@@ -180,10 +182,10 @@ Steps in order:
    the script before anything is built.
 2. `go vet ./...` and `go test ./...`.
 3. Build for arm64 with `-trimpath` and `-X main.version=VERSION`; write `Info.plist` (bundle ID
-   `com.fintonlabs.marquee`, `LSUIElement`, macOS 12 minimum, the microphone, local network and
-   Apple Events usage strings, `_marquee._tcp` Bonjour service); copy the icon and licence files
+   `com.fintonlabs.marquee`, `LSUIElement`, macOS 12 minimum, the microphone, camera, local network
+   and Apple Events usage strings, `_marquee._tcp` Bonjour service); copy the icon and licence files
    into `Resources`.
-4. Sign with the hardened runtime and `scripts/entitlements.plist` (audio input, Apple Events),
+4. Sign with the hardened runtime and `scripts/entitlements.plist` (audio input, camera, Apple Events),
    then `codesign --verify --strict`.
 5. Refuse a binary that contains `/Users/` paths.
 6. Smoke test: copy the app to a temporary folder, check `marquee version`, run

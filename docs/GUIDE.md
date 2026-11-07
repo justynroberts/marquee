@@ -51,6 +51,16 @@ brightness and other display settings across restarts. `GET /v1/programs` lists 
 | `nowplaying` | The track playing in Music or Spotify |
 | `karaoke` | Synced lyrics for that track |
 
+**Camera scenes** draw the webcam, mirrored like a selfie view (see [Troubleshooting](#camera)
+if they show a message instead):
+
+| Name | |
+|---|---|
+| `camera` | The webcam as a dot matrix, auto-levelled; the panel's shape crops it to a band across the middle |
+| `popart` | Three posterised panels of the whole picture, in bold palettes that change every four seconds |
+| `motion` | Only what moves lights up, leaving trails that drift through the colours; a still room is dark |
+| `slitscan` | Time displacement: the centre column is live, and each column out is a frame older (about 11 s at the edges) |
+
 **Audio visualisers** listen to the microphone (see [Troubleshooting](#microphone) if they show a
 message instead):
 
@@ -506,6 +516,18 @@ The audio visualisers draw a message instead of bars when they cannot hear anyth
 
 Quiet music in a loud room, or a muted input, also looks flat: check the input level in Sound
 settings.
+
+### Camera
+
+The camera scenes draw a message instead of the picture when there is none:
+
+- **CAMERA / starting...**: the camera takes a second or so to open.
+- **CAMERA / Allow camera access in the dialog**: macOS is asking for permission.
+- **CAMERA ACCESS NEEDED**: permission was refused. Turn on Marquee in System Settings → Privacy &
+  Security → Camera. Marquee retries every three seconds. For `marquee serve` in a terminal, the
+  terminal app is what needs the permission. To be asked again:
+  `tccutil reset Camera com.fintonlabs.marquee`.
+- **CAMERA / no camera**: no camera is connected, or another app has it exclusively.
 
 ### Now Playing shows "Allow Marquee to control Music"
 
