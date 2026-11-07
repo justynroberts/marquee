@@ -1,0 +1,372 @@
+<!-- MIT License - Copyright (c) fintonlabs.com -->
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="dark">
+<title>Marquee</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Crect width='16' height='16' fill='%230b0c0a'/%3E%3Cg fill='%2346ff78'%3E%3Ccircle cx='3' cy='8' r='1.5'/%3E%3Ccircle cx='8' cy='8' r='1.5'/%3E%3Ccircle cx='13' cy='8' r='1.5'/%3E%3C/g%3E%3C/svg%3E">
+<style>
+/* MIT License - Copyright (c) fintonlabs.com */
+:root {
+  --bg: #0b0c0a; --raised: #121411; --sunk: #070806;
+  --ink: #e4e2d8; --ink2: #9a978c; --ink3: #5f5d56; --rule: #23241f; --rule2: #33352e;
+  --accent: #46ff78; --err: #ff5b38;
+  --t: 140ms;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; background: var(--bg); color: var(--ink); }
+body { font: 13px/16px ui-monospace, "SF Mono", Menlo, monospace; font-variant-numeric: tabular-nums; }
+.caps { font-size: 11px; letter-spacing: .08em; text-transform: uppercase; color: var(--ink3); }
+header { display: flex; align-items: center; gap: 16px; padding: 8px 16px; border-bottom: 1px solid var(--rule); }
+header h1 { font-size: 13px; font-weight: 600; margin: 0; }
+#status { color: var(--ink2); }
+#live { display: inline-block; width: 8px; height: 8px; background: var(--ink3); margin-right: 8px; vertical-align: 0; border-radius: 1px; }
+#live.on { background: var(--accent); }
+.preview { padding: 16px; border-bottom: 1px solid var(--rule); background: var(--sunk); }
+.preview img { display: block; width: 100%; aspect-ratio: 1920 / 462; background: #000; border-radius: 2px; image-rendering: auto; }
+main { display: grid; grid-template-columns: minmax(0, 5fr) minmax(0, 7fr); }
+section { padding: 16px; }
+section + section { border-left: 1px solid var(--rule); }
+h2 { margin: 0 0 8px; }
+.programs { display: grid; grid-template-columns: repeat(auto-fill, minmax(112px, 1fr)); border-top: 1px solid var(--rule); border-left: 1px solid var(--rule); }
+.programs button { text-align: left; border: 0; border-right: 1px solid var(--rule); border-bottom: 1px solid var(--rule); border-radius: 0; height: 40px; padding: 0 8px; }
+.programs button[aria-pressed="true"] { color: var(--ink); background: var(--raised); box-shadow: inset 2px 0 0 var(--accent); }
+.programs .group { grid-column: 1 / -1; padding: 8px 0 4px; border-bottom: 1px solid var(--rule); border-right: 1px solid var(--rule); }
+button, input, textarea, select { font: inherit; color: var(--ink); }
+button { background: transparent; border: 1px solid var(--rule2); border-radius: 2px; height: 32px; padding: 0 12px; cursor: pointer; color: var(--ink2); transition: background-color var(--t) ease-out, color var(--t) ease-out; }
+button:hover { background: var(--raised); color: var(--ink); }
+button.primary { background: var(--ink); color: var(--bg); border-color: var(--ink); font-weight: 600; }
+button.primary:hover { background: #fff; }
+input[type=text], textarea { width: 100%; background: var(--sunk); border: 1px solid var(--rule2); border-radius: 2px; padding: 6px 8px; }
+textarea { min-height: 220px; resize: vertical; line-height: 16px; white-space: pre; }
+:focus-visible { outline: 1px solid var(--accent); outline-offset: 1px; }
+.row { display: flex; gap: 8px; align-items: center; margin-bottom: 8px; }
+.row > input[type=text] { flex: 1; }
+.block { margin-bottom: 24px; }
+.hint { color: var(--ink3); margin: 4px 0 0; }
+input[type=range] { flex: 1; accent-color: var(--ink); }
+#pad { display: block; width: 100%; aspect-ratio: 275 / 66; image-rendering: pixelated; background: #000; border: 1px solid var(--rule2); border-radius: 2px; touch-action: none; cursor: crosshair; }
+.swatches { display: flex; flex-wrap: wrap; gap: 4px; }
+.swatches button { width: 24px; height: 24px; padding: 0; border-radius: 2px; }
+.swatches button[aria-pressed="true"] { outline: 2px solid var(--ink); outline-offset: 1px; }
+#toast { position: fixed; left: 16px; bottom: 16px; padding: 8px 12px; background: var(--raised); border: 1px solid var(--rule2); border-radius: 2px; opacity: 0; transition: opacity var(--t) ease-out; pointer-events: none; }
+#toast.show { opacity: 1; }
+#toast.err { color: var(--err); }
+dialog { background: var(--bg); color: var(--ink); border: 1px solid var(--rule2); border-radius: 2px; padding: 16px; max-width: min(360px, calc(100vw - 32px)); }
+dialog::backdrop { background: rgb(0 0 0 / .6); }
+a { color: var(--ink); text-underline-offset: 2px; }
+@media (max-width: 760px) {
+  main { grid-template-columns: 1fr; }
+  section + section { border-left: 0; border-top: 1px solid var(--rule); }
+  .preview { padding: 8px 16px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; }
+}
+</style>
+</head>
+<body>
+<header>
+  <h1>Marquee</h1>
+  <span id="status"><span id="live"></span>connecting…</span>
+  <span style="flex:1"></span>
+  <button id="flip" aria-pressed="false" title="Turn the image upside down">Flip</button>
+  <button id="pause" aria-pressed="false">Pause</button>
+  <button id="about" aria-label="About this app" style="width:32px;padding:0">i</button>
+</header>
+
+<div class="preview"><img id="preview" alt="What the panel is showing now"></div>
+
+<main>
+  <section aria-labelledby="h-play">
+    <h2 id="h-play" class="caps">Play</h2>
+    <div class="programs" id="programs" role="group" aria-label="Programs"></div>
+  </section>
+
+  <section aria-labelledby="h-send">
+    <div class="block">
+      <h2 id="h-send" class="caps">Flash an alert</h2>
+      <form class="row" id="flash-form">
+        <input type="text" id="flash-text" placeholder="Build failed on main" aria-label="Alert text" maxlength="300">
+        <input type="text" id="flash-secs" value="10" aria-label="Seconds" style="width:56px;flex:none">
+        <button class="primary" type="submit">Flash</button>
+      </form>
+      <p class="hint">Interrupts whatever is playing, then returns to it.</p>
+    </div>
+
+    <div class="block">
+      <h2 class="caps">Add a message</h2>
+      <form class="row" id="say-form">
+        <input type="text" id="say-text" placeholder="[green]Deploy done[/] :check: 🎉" aria-label="Message">
+        <button type="submit">Add</button>
+      </form>
+    </div>
+
+    <div class="block">
+      <h2 class="caps"><label for="messages">messages.txt</label></h2>
+      <textarea id="messages" spellcheck="false"></textarea>
+      <div class="row" style="margin-top:8px">
+        <button id="save">Save</button>
+        <button id="show-board">Save and play board</button>
+        <span class="hint" style="margin:0">Tags: [red] [#hex] [bg=blue] [rainbow] [blink] [wave] [script] [pixel] [big] :fire: {time}. @theme=green</span>
+      </div>
+    </div>
+
+    <div class="block">
+      <h2 class="caps">Countdown timer</h2>
+      <form class="row" id="timer-form">
+        <input type="text" id="timer-min" value="5" aria-label="Minutes" style="width:64px;flex:none">
+        <span class="hint" style="margin:0">min</span>
+        <input type="text" id="timer-label" placeholder="standup" aria-label="Timer label" maxlength="40">
+        <button class="primary" type="submit">Start</button>
+        <button type="button" id="timer-cancel">Cancel</button>
+      </form>
+      <p class="hint">Counts down over whatever is playing, flashes at zero, then returns. Cancel also stops a flash.</p>
+    </div>
+
+    <div class="block">
+      <h2 class="caps">Draw</h2>
+      <canvas id="pad" width="275" height="66" aria-label="Drawing pad, 275 by 66 LEDs"></canvas>
+      <div class="row" style="margin-top:8px;flex-wrap:wrap">
+        <div class="swatches" id="swatches" role="group" aria-label="Colour"></div>
+        <select id="brush" aria-label="Brush size" style="height:32px;background:var(--sunk);border:1px solid var(--rule2);border-radius:2px">
+          <option value="1">1 LED</option><option value="3" selected>3 LEDs</option><option value="6">6 LEDs</option><option value="12">12 LEDs</option>
+        </select>
+        <button id="pad-clear">Clear</button>
+        <button id="pad-send" class="primary">Show on panel</button>
+        <label class="hint" style="margin:0"><input type="checkbox" id="pad-live" checked> live</label>
+      </div>
+    </div>
+
+    <div class="block">
+      <h2 class="caps"><label for="schedule">Daily schedule</label></h2>
+      <textarea id="schedule" spellcheck="false" style="min-height:140px"></textarea>
+      <div class="row" style="margin-top:8px"><button id="schedule-save">Save schedule</button><span class="hint" id="schedule-count" style="margin:0"></span></div>
+    </div>
+
+    <div class="block">
+      <h2 class="caps">Picture or GIF</h2>
+      <div class="row">
+        <input type="file" id="media" accept="image/png,image/jpeg,image/gif,image/webp" aria-label="Image or GIF to show">
+      </div>
+      <p class="hint">Cropped to fill 1920 × 462. Animated GIFs play with their own timing.</p>
+    </div>
+
+    <div class="block">
+      <h2 class="caps">API</h2>
+      <p class="hint" style="margin:0 0 8px">Other apps can drive the panel over HTTP at <code id="api-base"></code>. From other devices they need an API key (create one in the Marquee menu). Reference: <a href="/v1/openapi.json">/v1/openapi.json</a>.</p>
+      <pre class="hint" style="white-space:pre-wrap;margin:0" id="api-example"></pre>
+    </div>
+
+    <div class="block">
+      <h2 class="caps"><label for="bright">Brightness</label></h2>
+      <div class="row"><input type="range" id="bright" min="5" max="100" step="5"><span id="bright-val" style="width:40px;text-align:right">–</span></div>
+    </div>
+  </section>
+</main>
+
+<div id="toast" role="status" aria-live="polite"></div>
+
+<dialog id="info" aria-labelledby="info-title">
+  <h2 id="info-title" style="font-size:13px;margin:0 0 8px">Panel remote</h2>
+  <p style="color:var(--ink2)">Drives Thermalright USB LED panels: scenes, a message board, audio visualisers, a dashboard, alerts and pictures, with an HTTP API for other apps. <a href="/v1/openapi.json">API reference</a>.</p>
+  <p style="color:var(--ink3)">Emoji from Apple Color Emoji on this Mac, or Twemoji (CC-BY 4.0). Includes FreeType, HarfBuzz and code ported from Pillow. Not affiliated with Thermalright.</p>
+  <p>Made by <a href="https://fintonlabs.com" target="_blank" rel="noopener">FintonLabs</a></p>
+  <div style="text-align:right"><button id="info-close">Close</button></div>
+</dialog>
+
+<script>
+const token = new URLSearchParams(location.search).get("key") || "";
+const headers = token ? { "Authorization": "Bearer " + token } : {};
+const $ = (id) => document.getElementById(id);
+
+function toast(msg, err = false) {
+  const t = $("toast");
+  t.textContent = msg;
+  t.className = "show" + (err ? " err" : "");
+  clearTimeout(toast.timer);
+  toast.timer = setTimeout(() => (t.className = ""), 2200);
+}
+
+async function api(method, path, body, isForm = false) {
+  const opts = { method, headers: { ...headers } };
+  if (body !== undefined) {
+    if (isForm) opts.body = body;
+    else { opts.headers["Content-Type"] = "application/json"; opts.body = JSON.stringify(body); }
+  }
+  const res = await fetch(path, opts);
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(data.error || data.detail || `HTTP ${res.status}`);
+  return data;
+}
+
+const GROUP_TITLES = { playlist: "Playlists", panel: "Panels", scene: "Scenes", audio: "Audio", media: "Media" };
+let state = null;
+function renderPrograms() {
+  const box = $("programs");
+  box.textContent = "";
+  for (const group of ["playlist", "panel", "scene", "audio", "media"]) {
+    const items = state.programs.filter((p) => p.group === group);
+    if (!items.length) continue;
+    const g = document.createElement("div");
+    g.className = "group caps";
+    g.textContent = GROUP_TITLES[group];
+    box.append(g);
+    for (const p of items) {
+      const btn = document.createElement("button");
+      btn.textContent = p.name.replace("media:", "");
+      btn.title = p.description || p.name;
+      btn.setAttribute("aria-pressed", String(state.program === p.name));
+      btn.onclick = async () => {
+        try { await api("POST", "/v1/play", { program: p.name }); toast("Playing " + p.name); refresh(); }
+        catch (e) { toast(e.message, true); }
+      };
+      box.append(btn);
+    }
+  }
+}
+
+async function refresh() {
+  try {
+    const [st, pr] = await Promise.all([api("GET", "/v1/state"), api("GET", "/v1/programs")]);
+    state = st;
+    state.programs = pr.programs;
+    $("live").className = st.paused || st.panel !== "connected" ? "" : "on";
+    const panelNote = st.panel === "connected" ? "" : ` · panel ${st.panel}`;
+    $("status").lastChild.textContent = st.error && st.panel !== "connected"
+      ? ` ${st.error}`
+      : ` ${st.overlay ? st.overlay + " over " : ""}${st.program} · ${st.fps} fps${st.paused ? " · paused" : ""}${panelNote}`;
+    $("pause").textContent = st.paused ? "Resume" : "Pause";
+    $("pause").setAttribute("aria-pressed", String(st.paused));
+    $("flip").setAttribute("aria-pressed", String(st.flip));
+    if (document.activeElement !== $("bright")) { $("bright").value = st.brightness; $("bright-val").textContent = st.brightness + "%"; }
+    renderPrograms();
+  } catch (e) {
+    $("live").className = "";
+    $("status").lastChild.textContent = " " + (e.message.includes("401") || e.message.includes("key") ? "API key needed: open this page with ?key=mq_..." : "server not reachable");
+  }
+}
+
+// Live preview: fetch the next frame when the last one has loaded.
+const img = $("preview");
+function nextFrame() { img.src = "/v1/preview.jpg?" + (token ? "key=" + encodeURIComponent(token) + "&" : "") + "t=" + Date.now(); }
+img.onload = () => setTimeout(nextFrame, 120);
+img.onerror = () => setTimeout(nextFrame, 1500);
+nextFrame();
+
+$("flash-form").onsubmit = async (e) => {
+  e.preventDefault();
+  const text = $("flash-text").value.trim();
+  if (!text) return;
+  try { await api("POST", "/v1/flash", { text, seconds: Number($("flash-secs").value) || 10 }); toast("Flashing"); }
+  catch (err) { toast(err.message, true); }
+};
+$("say-form").onsubmit = async (e) => {
+  e.preventDefault();
+  const text = $("say-text").value.trim();
+  if (!text) return;
+  try { await api("POST", "/v1/messages", { text }); $("say-text").value = ""; toast("Added"); loadMessages(); }
+  catch (err) { toast(err.message, true); }
+};
+async function loadMessages() { $("messages").value = (await api("GET", "/v1/messages")).text; }
+async function saveMessages() { await api("PUT", "/v1/messages", { text: $("messages").value }); }
+$("save").onclick = async () => { try { await saveMessages(); toast("Saved"); } catch (e) { toast(e.message, true); } };
+$("show-board").onclick = async () => {
+  try { await saveMessages(); await api("POST", "/v1/play", { program: "board" }); toast("Playing board"); refresh(); }
+  catch (e) { toast(e.message, true); }
+};
+$("media").onchange = async () => {
+  const f = $("media").files[0];
+  if (!f) return;
+  const fd = new FormData();
+  fd.append("file", f);
+  try { const r = await api("POST", "/v1/media", fd, true); toast("Showing " + f.name); refresh(); }
+  catch (e) { toast(e.message, true); }
+  $("media").value = "";
+};
+$("bright").oninput = () => ($("bright-val").textContent = $("bright").value + "%");
+$("bright").onchange = async () => {
+  try { await api("POST", "/v1/brightness", { percent: Number($("bright").value) }); }
+  catch (e) { toast(e.message, true); }
+};
+$("flip").onclick = async () => {
+  try { await api("POST", "/v1/flip", { flip: !state?.flip }); refresh(); } catch (e) { toast(e.message, true); }
+};
+$("pause").onclick = async () => {
+  try { await api("POST", "/v1/pause", { paused: !state?.paused }); refresh(); } catch (e) { toast(e.message, true); }
+};
+$("about").onclick = () => $("info").showModal();
+$("info-close").onclick = () => $("info").close();
+$("info").onclick = (e) => { if (e.target === $("info")) $("info").close(); };
+
+// ---- timer ----
+$("timer-form").onsubmit = async (e) => {
+  e.preventDefault();
+  try { await api("POST", "/v1/timer", { minutes: Number($("timer-min").value), label: $("timer-label").value }); toast("Timer started"); }
+  catch (err) { toast(err.message, true); }
+};
+$("timer-cancel").onclick = async () => { try { await api("DELETE", "/v1/overlay"); toast("Cancelled"); } catch (e) { toast(e.message, true); } };
+
+// ---- drawing pad ----
+const pad = $("pad"), ctx = pad.getContext("2d");
+ctx.fillStyle = "#000"; ctx.fillRect(0, 0, 275, 66);
+const COLOURS = ["#e4e2d8", "#ff4038", "#ff8c28", "#ffd63c", "#46dc6e", "#3cd2e6", "#508cff", "#aa6eff", "#ff69c8", "#000000"];
+let colour = COLOURS[0], drawing = false, last = null, dirty = false, sending = false;
+for (const c of COLOURS) {
+  const btn = document.createElement("button");
+  btn.style.background = c === "#000000" ? "repeating-linear-gradient(45deg,#000 0 4px,#333 4px 8px)" : c;
+  btn.setAttribute("aria-label", c === "#000000" ? "Eraser" : "Colour " + c);
+  btn.setAttribute("aria-pressed", String(c === colour));
+  btn.onclick = () => { colour = c; for (const x of $("swatches").children) x.setAttribute("aria-pressed", String(x === btn)); };
+  $("swatches").append(btn);
+}
+function padPoint(e) {
+  const r = pad.getBoundingClientRect();
+  return [Math.floor((e.clientX - r.left) / r.width * 275), Math.floor((e.clientY - r.top) / r.height * 66)];
+}
+function stamp(x, y) {
+  const s = Number($("brush").value);
+  ctx.fillStyle = colour;
+  ctx.fillRect(x - Math.floor(s / 2), y - Math.floor(s / 2), s, s);
+}
+function line(a, b) {
+  const n = Math.max(Math.abs(b[0] - a[0]), Math.abs(b[1] - a[1]), 1);
+  for (let i = 0; i <= n; i++) stamp(Math.round(a[0] + (b[0] - a[0]) * i / n), Math.round(a[1] + (b[1] - a[1]) * i / n));
+}
+async function sendPad() {
+  if (sending) { dirty = true; return; }
+  sending = true; dirty = false;
+  try { await api("POST", "/v1/draw", { png: pad.toDataURL("image/png") }); }
+  catch (e) { toast(e.message, true); }
+  sending = false;
+  if (dirty) sendPad();
+}
+pad.onpointerdown = (e) => { drawing = true; pad.setPointerCapture(e.pointerId); last = padPoint(e); stamp(...last); if ($("pad-live").checked) sendPad(); };
+pad.onpointermove = (e) => { if (!drawing) return; const p = padPoint(e); line(last, p); last = p; if ($("pad-live").checked) sendPad(); };
+pad.onpointerup = () => { drawing = false; if ($("pad-live").checked) sendPad(); };
+$("pad-clear").onclick = () => { ctx.fillStyle = "#000"; ctx.fillRect(0, 0, 275, 66); if ($("pad-live").checked) sendPad(); };
+$("pad-send").onclick = () => sendPad().then(() => { toast("Drawing on the panel"); refresh(); });
+
+// ---- schedule ----
+async function loadSchedule() {
+  const r = await api("GET", "/v1/schedule");
+  $("schedule").value = r.text;
+  $("schedule-count").textContent = r.entries.length + " active";
+}
+$("schedule-save").onclick = async () => {
+  try { const r = await api("PUT", "/v1/schedule", { text: $("schedule").value }); $("schedule-count").textContent = r.entries.length + " active"; toast("Schedule saved"); }
+  catch (e) { toast(e.message, true); }
+};
+
+$("api-base").textContent = location.origin + "/v1";
+$("api-example").textContent = `curl -X POST ${location.origin}/v1/flash -H 'Content-Type: application/json' -d '{"text":"Build failed","seconds":10}'`;
+
+refresh();
+loadMessages().catch(() => {});
+loadSchedule().catch(() => {});
+setInterval(refresh, 2000);
+</script>
+</body>
+</html>
