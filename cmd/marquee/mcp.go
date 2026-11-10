@@ -435,7 +435,7 @@ func mcpTools() []mcpTool {
 		},
 		{
 			Name: "set_playlist", Title: "Create or replace a playlist",
-			Description: "Create or replace a custom playlist, then play it by name. Items are program names: scenes (matrix, fire, plasma, clock, ...), board (one pass of the message board), news (one pass of the headline ticker), nowplaying, dashboard, interference, or media:FILE. Each non-board item plays for `seconds`.",
+			Description: "Create or replace a custom playlist, then play it by name. Items are program names: scenes (matrix, fire, plasma, clock, ...), board (one pass of the message board), news (one pass of the headline ticker), nowplaying, dashboard, interference, bigclock, worldclock, headlines, newsreel (or newsreel:bbc, newsreel:sky, newsreel:hn, ...), flights, quakes, onthisday, moon, countdown, wordclock, calendar, markets, air, weather, ascii, or media:FILE. Each non-board item plays for `seconds`.",
 			InputSchema: schema(map[string]any{
 				"name":    prop("string", "Lowercase name: letters, digits, - and _ (not a built-in program name)."),
 				"items":   map[string]any{"type": "array", "items": map[string]any{"type": "string"}, "description": "Program names in order.", "minItems": 1, "maxItems": 100},

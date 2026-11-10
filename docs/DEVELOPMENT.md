@@ -22,7 +22,7 @@ client and the MCP server.
 | `internal/ft` | cgo binding to vendored FreeType and HarfBuzz |
 | `internal/pil` | Ports of Pillow's Lanczos resampling and premultiplication |
 | `internal/emoji` | Colour emoji: Apple Color Emoji from the system on macOS, embedded Twemoji (`twemoji.zip`) otherwise |
-| `internal/dashboard` | Full-resolution system dashboard, the interference visual, and a port of Pillow's line drawing (`pilline.go`) |
+| `internal/dashboard` | Full-resolution system dashboard, the interference visual, the big clock, world clock, headlines wall, newsreel, flights, quakes, on this day, moon, countdown, and a port of Pillow's line drawing (`pilline.go`) |
 | `internal/nowplaying` | Now Playing and karaoke screens; Music and Spotify polling through `osascript`; LRCLIB lyrics |
 | `internal/hud` | The HUD screen and the `Mirrored` transform |
 | `internal/feeds` | Weather (Open-Meteo), PagerDuty, Hacker News and RSS/Atom; registers board tokens |
@@ -69,7 +69,7 @@ are averaged every two seconds into `Status.Timing`, visible in `/v1/state`.
 
 LED-grid programs (scenes, board, flash, timer, draw) draw into a `led.Grid` of 275 x 66 cells,
 which `Grid.Image` expands into round dots on a ground colour. Full-resolution programs
-(dashboard, interference, Now Playing, karaoke, HUD) draw the 1920 x 462 image directly.
+(dashboard, interference, clocks, headlines, Now Playing, karaoke, HUD) draw the 1920 x 462 image directly.
 
 The wire protocol (handshake, the JPEG split into 512-byte packets, the status reply) is in
 [PROTOCOL.md](PROTOCOL.md).
@@ -125,6 +125,7 @@ Other opt-in variables for looking at output by eye or hitting real services:
 |---|---|
 | `HUD_PNG=DIR` | `internal/hud` tests write each HUD case as a PNG |
 | `NOWPLAYING_PNG=/path/out.png` | `internal/nowplaying` writes sample Now Playing and lyrics frames |
+| `HIRES_PNG=DIR` | `internal/dashboard` writes `bigclock`, `worldclock`, `headlines`, `newsreel`, `flights`, `quakes`, `onthisday`, `moon`, `countdown`, `wordclock`, `calendar`, `markets`, `air`, `weather` and `ascii` frames |
 | `CAMERA_REAL=DIR` | `internal/scenes` `TestCameraReal` opens the real camera and writes a PNG per camera scene |
 | `NOWPLAYING_REAL=1` | `internal/nowplaying` tests talk to the real Music/Spotify and LRCLIB |
 

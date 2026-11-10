@@ -18,6 +18,7 @@ import (
 	"time"
 
 	"github.com/justynroberts/marquee/internal/dashboard"
+	"github.com/justynroberts/marquee/internal/feeds"
 	"github.com/justynroberts/marquee/internal/hud"
 	"github.com/justynroberts/marquee/internal/led"
 	"github.com/justynroberts/marquee/internal/nowplaying"
@@ -160,6 +161,9 @@ type Engine struct {
 
 	custom   map[string]Playlist // playlists.json
 	newsOnce sync.Once
+	newsMu   sync.Mutex
+	news     []feeds.Headline // the latest fetch, for the headlines wall
+	newsAt   time.Time
 
 	schedMinute string
 	stop        chan struct{}
@@ -218,11 +222,29 @@ func (e *Engine) Programs() []ProgramInfo {
 	out = append(out, ProgramInfo{Name: "showcase", Group: "playlist", Description: "A guided tour of everything Marquee can do"})
 	out = append(out, ProgramInfo{Name: "board", Group: "panel", Description: "Scrolling message board (messages.txt)"},
 		ProgramInfo{Name: "draw", Group: "panel", Description: "The drawing pad canvas"},
-		ProgramInfo{Name: "news", Group: "panel", Description: "Headline ticker: Hacker News, or the feeds in news-sources.txt"})
+		ProgramInfo{Name: "news", Group: "news", Description: "Headline ticker: Hacker News, or the feeds in news-sources.txt"})
 	out = append(out, ProgramInfo{Name: "hud", Group: "panel", Description: "Heads-up display: big clock and one line, high contrast (pair with mirror to read it reflected in a screen)"})
 	out = append(out, ProgramInfo{Name: "nowplaying", Group: "scene", Description: "Now playing in Music or Spotify: artwork, title, progress (native resolution)"})
 	out = append(out, ProgramInfo{Name: "karaoke", Group: "scene", Description: "Synced lyrics for what Music or Spotify is playing, each line lighting up as it is sung"})
 	out = append(out, ProgramInfo{Name: "interference", Group: "scene", Description: "Live-stream interference field: drifting wave sources as contour bands (native resolution)"})
+	out = append(out, ProgramInfo{Name: "bigclock", Group: "scene", Description: "A full-resolution clock: hours and minutes as large as the panel allows, the date beside them"},
+		ProgramInfo{Name: "calendar", Group: "scene", Description: "This month and next with week numbers and UK bank holidays (area in calendar.txt)"},
+		ProgramInfo{Name: "wordclock", Group: "scene", Description: "The time spelled out in a grid of letters"},
+		ProgramInfo{Name: "countdown", Group: "scene", Description: "Days to go until the dates in countdown.txt (Christmas and New Year by default)"},
+		ProgramInfo{Name: "moon", Group: "scene", Description: "Tonight's moon: its phase drawn large, the next full and new moons, the coming 30 nights"},
+		ProgramInfo{Name: "worldclock", Group: "scene", Description: "Clocks for several cities with day/night strips (cities in world-clock.txt)"},
+		ProgramInfo{Name: "headlines", Group: "news", Description: "A news wall: every headline in small type, four slowly scrolling columns (native resolution)"},
+		ProgramInfo{Name: "flights", Group: "news", Description: "Aircraft overhead: a radar and the nearest planes, live from adsb.lol (place in weather.txt)"},
+		ProgramInfo{Name: "quakes", Group: "news", Description: "Earthquakes worldwide in the last day and week on a map, from the USGS"},
+		ProgramInfo{Name: "onthisday", Group: "news", Description: "On this day in history, from Wikipedia, one event at a time"},
+		ProgramInfo{Name: "markets", Group: "news", Description: "Crypto prices from CoinGecko with the day's move and seven days (coins in markets.txt)"},
+		ProgramInfo{Name: "air", Group: "news", Description: "Air quality and pollen for the weather place, now and the next 48 hours"},
+		ProgramInfo{Name: "newsreel", Group: "news", Description: "One news source crawling across the panel in mid-size type (source in newsreel.txt)"},
+		ProgramInfo{Name: "weather", Group: "scene", Description: "Weather now, the next 24 hours and the coming days (place in weather.txt)"},
+		ProgramInfo{Name: "ascii", Group: "camera", Description: "The webcam drawn in text, each character's density and colour from the picture (native resolution)"})
+	for _, s := range feeds.Presets {
+		out = append(out, ProgramInfo{Name: "newsreel:" + s.Key, Group: "news", Description: s.Label + " as a newsreel"})
+	}
 	for _, s := range scenes.List() {
 		out = append(out, ProgramInfo{Name: s.Name, Group: s.Group, Description: s.Description})
 	}
@@ -255,6 +277,54 @@ func (e *Engine) Media() []string {
 func (e *Engine) makeScene(name string, seconds float64) (Program, error) {
 	if name == "interference" {
 		return &interferenceProgram{v: dashboard.NewInterference(), seconds: seconds}, nil
+	}
+	if name == "bigclock" {
+		return &fullRes{name: name, v: dashboard.NewBigClock(), seconds: seconds}, nil
+	}
+	if name == "worldclock" {
+		z := dashboard.LoadZones(filepath.Join(e.paths.Dir, "world-clock.txt"))
+		return &fullRes{name: name, v: dashboard.NewWorldClock(z), seconds: seconds}, nil
+	}
+	if name == "weather" {
+		return &fullRes{name: name, v: dashboard.NewWeather(e.weatherPlace), seconds: seconds}, nil
+	}
+	if name == "ascii" {
+		return &fullRes{name: name, v: dashboard.NewASCII(), seconds: seconds}, nil
+	}
+	if name == "newsreel" || strings.HasPrefix(name, "newsreel:") {
+		src := e.newsreelSource
+		if key, ok := strings.CutPrefix(name, "newsreel:"); ok {
+			if _, ok := feeds.LookupSource(key); !ok || strings.Contains(key, "/") {
+				return nil, fmt.Errorf("unknown program %q", name)
+			}
+			src = func() string { return key }
+		}
+		return &fullRes{name: name, v: dashboard.NewNewsreel(src), seconds: seconds}, nil
+	}
+	switch name {
+	case "flights":
+		return &fullRes{name: name, v: dashboard.NewFlights(e.weatherPlace), seconds: seconds}, nil
+	case "quakes":
+		return &fullRes{name: name, v: dashboard.NewQuakes(), seconds: seconds}, nil
+	case "onthisday":
+		return &fullRes{name: name, v: dashboard.NewOnThisDay(), seconds: seconds}, nil
+	case "moon":
+		return &fullRes{name: name, v: dashboard.NewMoon(), seconds: seconds}, nil
+	case "markets":
+		path := filepath.Join(e.paths.Dir, "markets.txt")
+		return &fullRes{name: name, v: dashboard.NewMarkets(func() dashboard.MarketsConfig { return dashboard.LoadMarkets(path) }), seconds: seconds}, nil
+	case "calendar":
+		return &fullRes{name: name, v: dashboard.NewCalendar(e.calendarArea), seconds: seconds}, nil
+	case "air":
+		return &fullRes{name: name, v: dashboard.NewAirQuality(e.weatherPlace), seconds: seconds}, nil
+	case "wordclock":
+		return &fullRes{name: name, v: dashboard.NewWordClock(), seconds: seconds}, nil
+	case "countdown":
+		return &fullRes{name: name, v: dashboard.LoadCountdown(filepath.Join(e.paths.Dir, "countdown.txt")), seconds: seconds}, nil
+	}
+	if name == "headlines" {
+		e.startNews()
+		return &fullRes{name: name, v: dashboard.NewHeadlines(e.Headlines), seconds: seconds}, nil
 	}
 	if name == "nowplaying" {
 		e.npOnce.Do(func() { e.np = nowplaying.New() })

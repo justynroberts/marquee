@@ -199,3 +199,23 @@ func TestAirpaintPinchDraws(t *testing.T) {
 		}
 	}
 }
+
+// Snow must reach a balance rather than slowly burying the panel.
+func TestSnowLevelsOff(t *testing.T) {
+	CameraSource = block(100, 120, 220, 240, nil)
+	s := &snowfall{}
+	for i := range 12 * 60 * 10 { // ten minutes
+		s.Draw(led.NewGrid(), float64(i)/12, 1.0/12)
+	}
+	n := 0
+	for y := range rows {
+		for x := range cols {
+			if s.snow[y][x] {
+				n++
+			}
+		}
+	}
+	if pct := n * 100 / (rows * cols); pct > 20 {
+		t.Fatalf("snow covers %d%% of the panel after ten minutes", pct)
+	}
+}

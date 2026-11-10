@@ -54,3 +54,12 @@ func TestFetchHN(t *testing.T) {
 		t.Fatalf("%v %+v", err, hs)
 	}
 }
+
+// BBC News: RSS <link> elements with text content (HTML treats <link> as void).
+func TestParseFeedRSSLinks(t *testing.T) {
+	rss := `<?xml version="1.0" encoding="UTF-8"?><rss xmlns:atom="http://www.w3.org/2005/Atom" version="2.0"><channel><title><![CDATA[BBC News]]></title><link>https://www.bbc.co.uk/news</link><image><url>u</url><title>BBC News</title><link>https://www.bbc.co.uk/news</link></image><atom:link href="x" rel="self"/><item><title><![CDATA[First story]]></title><link>https://www.bbc.co.uk/news/1</link></item><item><title><![CDATA[Second story]]></title><link>https://www.bbc.co.uk/news/2</link></item></channel></rss>`
+	hs, err := ParseFeed([]byte(rss), 10)
+	if err != nil || len(hs) != 2 || hs[0].Source != "BBC News" || hs[1].Title != "Second story" {
+		t.Fatalf("%v %+v", err, hs)
+	}
+}

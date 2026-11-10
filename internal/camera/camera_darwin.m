@@ -143,8 +143,22 @@ static int vision(CVPixelBufferRef pb, int w, int ow, int oh, int *nh) {
 		}
 		CVPixelBufferUnlockBaseAddress(pb, kCVPixelBufferLock_ReadOnly);
 
-		int nh = 0;
-		int got = vision(pb, want, ow, oh, &nh);
+		// Vision at most 15 times a second: the panel shows 12-20 frames a second, so running it
+		// on every 30 fps camera frame only burns CPU. Between runs the last results stand.
+		static CFAbsoluteTime lastVision;
+		static int lastGot, lastNh;
+		int nh = lastNh;
+		int got = lastGot;
+		CFAbsoluteTime now = CFAbsoluteTimeGetCurrent();
+		int wanted = want;
+		if (wanted == 0) {
+			got = nh = lastGot = lastNh = 0;
+		} else if (now - lastVision >= 1.0 / 15 || (got & wanted) != wanted) {
+			lastVision = now;
+			got = vision(pb, wanted, ow, oh, &nh);
+			lastGot = got;
+			lastNh = nh;
+		}
 
 		pthread_mutex_lock(&mu);
 		memcpy(frame, tframe, (size_t)ow * oh * 3);

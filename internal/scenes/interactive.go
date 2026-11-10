@@ -39,8 +39,10 @@ func (v view) grid(p camera.Point, f camera.Frame) (float64, float64) {
 }
 
 // silhouette fills body with the person mask in grid cells, and pix with the camera colours
-// (black outside the frame). It reports whether the frame carried a mask.
+// (black outside the frame), auto-levelled on the person so they show bright even in a dim
+// room. It reports whether the frame carried a mask.
 func silhouette(f camera.Frame, v view, body *[rows][cols]bool, pix *[rows][cols]led.RGB) bool {
+	defer levelBody(body, pix)
 	for y := range rows {
 		for x := range cols {
 			fx, fy := v.frame(x, y)
@@ -56,8 +58,37 @@ func silhouette(f camera.Frame, v view, body *[rows][cols]bool, pix *[rows][cols
 	return f.Mask != nil
 }
 
+// levelBody stretches pix so the person's 3rd-97th percentile brightness fills the range
+// (the whole picture when nobody is masked).
+func levelBody(body *[rows][cols]bool, pix *[rows][cols]led.RGB) {
+	var sample []led.RGB
+	for y := range rows {
+		for x := range cols {
+			if body[y][x] {
+				sample = append(sample, pix[y][x])
+			}
+		}
+	}
+	if len(sample) < 50 {
+		sample = sample[:0]
+		for y := range rows {
+			sample = append(sample, pix[y][:]...)
+		}
+	}
+	lo, hi := levels(sample)
+	gain := 255 / (hi - lo)
+	for y := range rows {
+		for x := range cols {
+			p := &pix[y][x]
+			*p = led.RGB{R: u8((float64(p.R) - lo) * gain), G: u8((float64(p.G) - lo) * gain), B: u8((float64(p.B) - lo) * gain)}
+		}
+	}
+}
+
 // ---------------------------------------------------------------------------
 // snowfall: falling-sand snow that piles on the silhouette and the floor.
+
+const snowMelt = 0.004 // per settled flake per frame
 
 type snowfall struct {
 	snow [rows][cols]bool
@@ -131,11 +162,18 @@ func (s *snowfall) Draw(g *led.Grid, t, dt float64) {
 			if rand.IntN(2) == 0 {
 				d = -1
 			}
+			moved := false
 			for _, dx := range []int{d, -d} {
 				if nx := x + dx; nx >= 0 && nx < cols && !s.solid(nx, y) && !s.solid(nx, y+1) {
 					s.snow[y][x], s.snow[y+1][nx] = false, true
+					moved = true
 					break
 				}
+			}
+			// Settled snow melts (about 20 s a flake), so drifts level off instead of
+			// burying the panel.
+			if !moved && rand.Float64() < snowMelt {
+				s.snow[y][x] = false
 			}
 		}
 	}
@@ -155,7 +193,8 @@ func (s *snowfall) Draw(g *led.Grid, t, dt float64) {
 				g.Set(x, y, led.RGB{R: 235, G: 240, B: 255})
 			case s.body[y][x]:
 				p := s.pix[y][x]
-				c := led.RGB{R: u8(float64(p.R)*0.35 + 10), G: u8(float64(p.G)*0.4 + 14), B: u8(float64(p.B)*0.5 + 30)}
+				// near full colour with a cool cast, so pure-white snow still reads on top
+				c := led.RGB{R: u8(float64(p.R)*0.78 + 8), G: u8(float64(p.G)*0.84 + 12), B: u8(float64(p.B)*0.9 + 28)}
 				if c.Luma() >= 22 {
 					g.Set(x, y, c)
 				}
@@ -236,7 +275,10 @@ func (b *bubbles) Draw(g *led.Grid, t, dt float64) {
 	for y := range rows {
 		for x := range cols {
 			if b.body[y][x] {
-				g.Set(x, y, led.RGB{R: 18, G: 52, B: 60})
+				// you, at about two thirds brightness so the bubbles stay on top
+				p := b.pix[y][x]
+				c := led.RGB{R: u8(float64(p.R)*0.6 + 10), G: u8(float64(p.G)*0.65 + 24), B: u8(float64(p.B)*0.65 + 28)}
+				g.Set(x, y, c)
 			}
 		}
 	}

@@ -202,12 +202,12 @@ async function api(method, path, body, isForm = false) {
   return data;
 }
 
-const GROUP_TITLES = { playlist: "Playlists", panel: "Panels", scene: "Scenes", audio: "Audio", camera: "Camera", media: "Media" };
+const GROUP_TITLES = { playlist: "Playlists", panel: "Panels", news: "News & info", scene: "Scenes", audio: "Audio", camera: "Camera", media: "Media" };
 let state = null;
 function renderPrograms() {
   const box = $("programs");
   box.textContent = "";
-  for (const group of ["playlist", "panel", "scene", "audio", "camera", "media"]) {
+  for (const group of ["playlist", "panel", "news", "scene", "audio", "camera", "media"]) {
     const items = state.programs.filter((p) => p.group === group);
     if (!items.length) continue;
     const g = document.createElement("div");

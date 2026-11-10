@@ -205,7 +205,7 @@ curl $M/v1/fonts
 
 | Field | Type | |
 |---|---|---|
-| `program` | string, required | A name from `/v1/programs`: a playlist, `showcase`, `board`, `draw`, `news`, `hud`, a scene, an audio visualiser, `nowplaying`, `karaoke`, `dashboard`, `interference` or `media:FILE` |
+| `program` | string, required | A name from `/v1/programs`: a playlist, `showcase`, `board`, `draw`, `news`, `hud`, a scene, an audio visualiser, `nowplaying`, `karaoke`, `dashboard`, `interference`, `bigclock`, `worldclock`, `headlines`, `newsreel`, `newsreel:NAME`, `flights`, `quakes`, `onthisday`, `moon`, `countdown`, `wordclock`, `calendar`, `markets`, `air`, `weather`, `ascii` or `media:FILE` |
 
 ```bash
 curl -X POST $M/v1/play -H 'Content-Type: application/json' -d '{"program":"matrix"}'
@@ -573,7 +573,7 @@ Creates or replaces a custom playlist, saved in `playlists.json`.
 
 | Field | Type | |
 |---|---|---|
-| `items` | array of strings, required | 1–100 program names: scenes, audio visualisers, `board`, `news`, `nowplaying`, `karaoke`, `dashboard`, `interference`, `hud`, `media:FILE` |
+| `items` | array of strings, required | 1–100 program names: scenes, audio visualisers, `board`, `news`, `nowplaying`, `karaoke`, `dashboard`, `interference`, `bigclock`, `worldclock`, `headlines`, `newsreel`, `newsreel:NAME`, `flights`, `quakes`, `onthisday`, `moon`, `countdown`, `wordclock`, `calendar`, `markets`, `air`, `weather`, `ascii`, `hud`, `media:FILE` |
 | `seconds` | number | Seconds per item, 0–3600; 0 or missing uses the default (20) |
 
 `board` and `news` items run for one full scroll rather than `seconds`. Names are lowercase

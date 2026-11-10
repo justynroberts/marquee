@@ -51,7 +51,8 @@ keys). Logs go to `~/Library/Logs/Marquee/marquee.log`.
   aquarium, drawn on a 275 x 66 grid of round LEDs.
 - **Audio visualisers**: spectrum, mirror, waterfall, scope, pulse and meter, from the microphone.
 - **Camera scenes**: camera, popart, motion and slitscan, from the webcam, and interactive ones
-  that see you: snowfall (settles on you), bubbles (pop them) and airpaint (pinch to draw).
+  that see you: snowfall (settles on you), bubbles (pop them) and airpaint (pinch to draw). Also
+  thermal (a heat camera), kaleido (a kaleidoscope) and ascii (you, drawn in text).
 - **Message board** (`board`): `messages.txt`, one message per line, with colours, backgrounds,
   effects, fonts, sizes, animated sprites, colour emoji, live tokens such as `{time}`, `{cpu}` and
   `{weather}`, and green or amber phosphor themes. See [docs/BOARD.md](docs/BOARD.md).
@@ -59,6 +60,25 @@ keys). Logs go to `~/Library/Logs/Marquee/marquee.log`.
   resolution, so small text stays sharp.
 - **Interference** (`interference`): drifting wave sources drawn as contour bands, full
   resolution.
+- **Clocks** (`bigclock`, `worldclock`): a full-resolution clock as large as the panel allows, and
+  clocks for several cities with day/night strips (`world-clock.txt` picks the cities).
+- **Weather** (`weather`): now, the next 24 hours and the coming days from
+  [Open-Meteo](https://open-meteo.com), for the place in `weather.txt`.
+- **Headlines** (`headlines`): a news wall, every headline in small type in four slowly scrolling
+  columns, from the same sources as the `news` ticker.
+- **Flights** (`flights`): planes overhead on a radar, live from [adsb.lol](https://adsb.lol),
+  with callsign, type, altitude, speed and distance.
+- **Earthquakes** (`quakes`): the world's quakes from the USGS on a map, the latest listed.
+- **On this day** (`onthisday`): Wikipedia's history for today, one event at a time.
+- **Moon** (`moon`): tonight's phase drawn large, the next full and new moons, the coming month.
+- **Word clock** (`wordclock`) and **calendar** (`calendar`, with UK bank holidays).
+- **Markets** (`markets`): crypto prices from CoinGecko with the day's move and the week.
+- **Air quality** (`air`): AQI, pollutants and pollen for the weather place, and the next 48 hours.
+- **Flock** (`flock`): a murmuration of birds wheeling across the LED grid.
+- **Countdown** (`countdown`): days to go until the dates in `countdown.txt`.
+- **Newsreel** (`newsreel`): one source crawling across the panel in mid-size type on two rows.
+  BBC News by default; `newsreel:sky`, `newsreel:hn`, `newsreel:guardian` and others pick a
+  preset, and `newsreel.txt` takes any RSS or Atom URL.
 - **Now Playing** (`nowplaying`): artwork, title, artist, album and a progress bar from Music or
   Spotify.
 - **Karaoke** (`karaoke`): time-synced lyrics from [LRCLIB](https://lrclib.net), each line lighting
@@ -175,5 +195,8 @@ draws them, and resampling and line drawing are ports of Pillow's own code.
 Includes FreeType 2.14.3 (FreeType Licence), HarfBuzz 14.5.0 (Old MIT), algorithms ported from
 Pillow 13 (HPND), and a JPEG encoder derived from Go's `image/jpeg` (BSD). Emoji: Apple Color Emoji
 from the system on macOS; [Twemoji](https://github.com/jdecked/twemoji) (CC-BY 4.0) elsewhere.
-Weather from [Open-Meteo](https://open-meteo.com); lyrics from [LRCLIB](https://lrclib.net). The
+Weather from [Open-Meteo](https://open-meteo.com); lyrics from [LRCLIB](https://lrclib.net);
+aircraft from [adsb.lol](https://adsb.lol) (ODbL); earthquakes from the USGS; "on this day" from
+Wikipedia (CC BY-SA); prices from CoinGecko; air quality from Open-Meteo (CAMS); bank holidays
+from gov.uk (OGL). The
 licence texts ship in `Marquee.app/Contents/Resources`.

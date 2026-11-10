@@ -41,6 +41,7 @@ brightness and other display settings across restarts. `GET /v1/programs` lists 
 | `bounce` | An emoji bouncing around the panel, changing on every wall hit |
 | `fireworks` | Rockets that burst into coloured sparks |
 | `aquarium` | Emoji fish, rising bubbles and swaying weed |
+| `flock` | A murmuration: birds wheeling and turning together, scattering when a hawk crosses |
 
 **Full-resolution screens** are drawn at the panel's native 1920 x 462, so small text stays sharp:
 
@@ -48,6 +49,20 @@ brightness and other display settings across restarts. `GET /v1/programs` lists 
 |---|---|
 | `dashboard` | Clock, CPU (big percentage, two-minute trace, per-core bars), memory, network and machine details |
 | `interference` | Three drifting wave sources drawn as contour bands, with a clock and fps label |
+| `bigclock` | Hours and minutes as large as the panel allows, seconds beside them, the date, week and zone on the left, and a seconds sweep along the bottom |
+| `worldclock` | One column per city: time (dimmed at night), date, offset from here, and a 24-hour strip with daylight lit |
+| `weather` | Temperature and conditions now, a 24-hour temperature curve over rain-chance bars, and five days ahead. Readings of 30°C and up are in vermilion |
+| `flights` | Aircraft overhead: a radar that zooms in on busy skies, planes moved on between fetches by their own speed and track, and the nearest airborne ones listed with type, altitude, speed, distance and bearing. An emergency squawk is in vermilion |
+| `quakes` | Earthquakes: the last day's M2.5+ and last 30 days' M4.5+ on a world map, which between them trace the plate boundaries, and the latest listed. M6+ is in vermilion; a quake in the last hour pulses |
+| `onthisday` | Wikipedia's "on this day": one event every 12 seconds, its year large on the left |
+| `moon` | Tonight's moon drawn to its phase, illumination and age, the next full and new moons, and the next 30 nights |
+| `wordclock` | The time to the nearest five minutes spelled out in a grid of letters, with dots for the minutes in between |
+| `calendar` | This month with ISO week numbers, today in ink and bank holidays boxed; next month small and the next three bank holidays |
+| `markets` | Up to four cryptocurrencies from CoinGecko: price, the day's move (vermilion at 5% or more) and the last seven days |
+| `air` | Air quality: the European AQI, PM2.5, PM10, NO2 and ozone against WHO guideline levels, the next 48 hours, and pollen in Europe. Poor air is in vermilion |
+| `countdown` | Days until the next date in `countdown.txt` (hours, minutes and seconds on the day), and the ones after it |
+| `newsreel` | One news source crawling across the panel in mid-size type, two rows, alternate stories on each; `newsreel:bbc`, `newsreel:sky` and the other presets below pick a source |
+| `headlines` | A news wall: Hacker News and BBC News headlines in small type, four columns scrolling slowly upwards; Hacker News stories with 500+ points are marked in vermilion |
 | `nowplaying` | The track playing in Music or Spotify |
 | `karaoke` | Synced lyrics for that track |
 
@@ -63,9 +78,12 @@ if they show a message instead):
 | `snowfall` | Snow falls and settles on your head and shoulders; move and it slides off or is shaken loose |
 | `bubbles` | Bubbles rise across the whole panel; touch one with any part of you to pop it. Counts your pops |
 | `airpaint` | Pinch thumb and index finger to draw light in the air; open them to lift the pen. Strokes fade over a few seconds; two hands draw in two colours |
+| `thermal` | A heat camera in an iron palette: you glow white-hot against a cold room |
+| `kaleido` | The webcam through an eight-way kaleidoscope that turns and breathes slowly |
+| `ascii` | You, drawn in text at full resolution: each character's density and colour come from the picture |
 
-The interactive three use Apple's Vision framework on the Mac itself: person segmentation for
-`snowfall` and `bubbles`, hand pose for `airpaint`. It runs only while one of them plays, and
+The interactive scenes and `thermal` use Apple's Vision framework on the Mac itself: person segmentation for
+`snowfall`, `bubbles` and `thermal`, hand pose for `airpaint`. It runs only while one of them plays, and
 nothing leaves the Mac. Stand back far enough that your head and shoulders are in frame; plain
 backgrounds and good light help.
 
@@ -231,6 +249,88 @@ https://www.theverge.com/rss/index.xml
   labelled with the feed's own title.
 - Blank lines and `#` comments are ignored. With no valid lines, Hacker News is used.
 
+`headlines` uses the same fetch but shows more: the top 40 Hacker News stories and up to 25 items
+per feed, against the ticker's 15 and 10, mixed so each source takes turns. Without a
+`news-sources.txt` it also shows the BBC News front page; with one, it shows exactly the sources
+listed.
+
+`newsreel` shows one source on its own. `newsreel:NAME` plays a preset; plain `newsreel` plays the
+first line of `newsreel.txt` in the data folder, which may be a preset name or any RSS or Atom URL
+(BBC News when there is no file). It fetches 30 stories and refreshes every ten minutes, taking
+new stories in as each row comes round to its start.
+
+| Preset | Source |
+|---|---|
+| `bbc` | BBC News front page |
+| `bbc-world`, `bbc-tech`, `bbc-sport` | BBC World, Technology, Sport |
+| `sky` | Sky News |
+| `guardian` | The Guardian (UK) |
+| `aljazeera` | Al Jazeera |
+| `npr` | NPR News |
+| `hn` | Hacker News (500+ point stories get a vermilion marker) |
+| `verge`, `ars` | The Verge, Ars Technica |
+
+```
+# newsreel.txt
+https://www.theregister.com/headlines.atom
+```
+
+`worldclock` shows San Francisco, New York, London, Tokyo and Sydney. To choose your own (up to
+eight), create `world-clock.txt` in the data folder with one city per line, as `Label = zone` or a
+bare [time zone name](https://en.wikipedia.org/wiki/List_of_tz_database_time_zones):
+
+```
+# world-clock.txt
+Home = Europe/London
+Asia/Singapore
+Austin = America/Chicago
+```
+
+`weather` uses [Open-Meteo](https://open-meteo.com) (no key). It shows the place named on the
+first line of `weather.txt` in the data folder, else the message board's `@location`, else London.
+It refreshes every 15 minutes.
+
+`flights` shows the aircraft within 40 nautical miles of the same place, from
+[adsb.lol](https://adsb.lol) (no key), every 15 seconds. The place's coordinates are sent to
+adsb.lol, as they are to Open-Meteo for the weather. `quakes` reads the
+[USGS](https://earthquake.usgs.gov/earthquakes/feed/) feeds every five minutes and `onthisday`
+reads [Wikipedia](https://api.wikimedia.org) once a day; neither sends anything about you. `moon`
+is worked out on the Mac from the average lunar month, so its full and new moon times can be out
+by up to half a day.
+
+`air` uses the weather place too, and Open-Meteo's air quality forecast (CAMS); pollen is only
+forecast in Europe.
+
+`markets` shows Bitcoin, Ethereum and Solana in US dollars. To choose, create `markets.txt` with up
+to four [CoinGecko](https://www.coingecko.com) coin ids (the name in the coin page's address) and
+optionally a currency. Prices refresh every two minutes.
+
+```
+# markets.txt
+bitcoin
+dogecoin
+currency = gbp
+```
+
+`calendar` marks bank holidays in England and Wales from gov.uk. Put `scotland`,
+`northern-ireland` or `none` in `calendar.txt` to change that.
+
+`countdown` counts down to Christmas and New Year until you create `countdown.txt` in the data
+folder, one date per line. A date without a year repeats every year; a time is optional:
+
+```
+# countdown.txt
+Holiday = 2027-07-14
+Launch = 2027-02-01 09:00
+Birthday = 03-14
+```
+
+A one-off date drops off the day after it passes. It is read when the countdown starts, so play it
+again after editing.
+
+The city whose offset matches this Mac's is labelled HERE. It is read when the clock starts, so
+play it again after editing.
+
 Fetch now with `POST /v1/news/refresh` (or the MCP `refresh_news` tool). The ticker is the message
 board reading `news.txt`, which Marquee rewrites; editing `news.txt` yourself is pointless. If every
 source fails, the ticker says the headlines are unavailable.
@@ -356,7 +456,13 @@ Folder**). On Linux it is `~/.config/marquee`; `marquee serve --data DIR` uses a
 |---|---|
 | `messages.txt` | The message board. Yours to edit |
 | `schedule.txt` | The daily schedule. Yours to edit |
-| `news-sources.txt` | News ticker sources. Yours to create |
+| `news-sources.txt` | News ticker and headlines sources. Yours to create |
+| `markets.txt` | Coins and currency for `markets`. Yours to create |
+| `calendar.txt` | Bank holiday area for `calendar`. Yours to create |
+| `countdown.txt` | Countdown dates. Yours to create |
+| `newsreel.txt` | The newsreel's source: a preset name or feed URL. Yours to create |
+| `world-clock.txt` | World clock cities. Yours to create |
+| `weather.txt` | The place for the weather screen, e.g. `Manchester`. Yours to create |
 | `pagerduty-token` | PagerDuty API key |
 | `playlists.json` | Custom playlists |
 | `media/` | Uploaded pictures and animations |

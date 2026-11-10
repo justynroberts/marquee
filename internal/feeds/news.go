@@ -95,8 +95,26 @@ func FetchRSS(ctx context.Context, url string, n int) ([]Headline, error) {
 	return ParseFeed(b, n)
 }
 
-// ParseFeed parses RSS 2.0 or Atom.
+// ParseFeed parses RSS 2.0 or Atom. It reads the feed as XML first; only when that finds
+// nothing does it retry with HTML void elements auto-closed, for sloppy feeds. (Auto-closing
+// from the start breaks RSS, whose <link> has content.)
 func ParseFeed(b []byte, n int) ([]Headline, error) {
+	out, err := parseFeed(b, n, false)
+	if err != nil || len(out) == 0 {
+		if o2, err2 := parseFeed(b, n, true); err2 == nil && len(o2) > 0 {
+			return o2, nil
+		}
+	}
+	if err != nil {
+		return nil, err
+	}
+	if len(out) == 0 {
+		return nil, fmt.Errorf("feed: no items")
+	}
+	return out, nil
+}
+
+func parseFeed(b []byte, n int, autoClose bool) ([]Headline, error) {
 	var doc struct {
 		XMLName xml.Name
 		Channel struct {
@@ -112,7 +130,9 @@ func ParseFeed(b []byte, n int) ([]Headline, error) {
 	}
 	dec := xml.NewDecoder(strings.NewReader(string(b)))
 	dec.Strict = false
-	dec.AutoClose = xml.HTMLAutoClose
+	if autoClose {
+		dec.AutoClose = xml.HTMLAutoClose
+	}
 	dec.Entity = xml.HTMLEntity
 	if err := dec.Decode(&doc); err != nil {
 		return nil, fmt.Errorf("feed: %v", err)
@@ -138,9 +158,6 @@ func ParseFeed(b []byte, n int) ([]Headline, error) {
 		if len(out) == n {
 			break
 		}
-	}
-	if len(out) == 0 {
-		return nil, fmt.Errorf("feed: no items")
 	}
 	return out, nil
 }

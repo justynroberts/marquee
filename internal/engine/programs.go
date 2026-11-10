@@ -107,6 +107,24 @@ func (p *npProgram) Frame(t, dt float64) *image.RGBA {
 	return p.v.Frame(time.Now())
 }
 
+// fullRes runs a native-resolution visual from the dashboard package.
+type fullRes struct {
+	name string
+	v    interface {
+		Frame(t, dt float64, now time.Time) *image.RGBA
+	}
+	seconds float64
+}
+
+func (p *fullRes) Name() string            { return p.name }
+func (p *fullRes) Interval() time.Duration { return 0 }
+func (p *fullRes) Frame(t, dt float64) *image.RGBA {
+	if p.seconds > 0 && t > p.seconds {
+		return nil
+	}
+	return p.v.Frame(t, dt, time.Now())
+}
+
 type interferenceProgram struct {
 	v       *dashboard.Interference
 	seconds float64

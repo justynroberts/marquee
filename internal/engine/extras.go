@@ -12,6 +12,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/justynroberts/marquee/internal/board"
 	"github.com/justynroberts/marquee/internal/feeds"
 )
 
@@ -115,10 +116,12 @@ func (e *Engine) DeletePlaylist(name string) error {
 
 func reservedName(n string) bool {
 	switch n {
-	case "board", "draw", "news", "push", "showcase", "nowplaying", "karaoke", "hud", "dashboard", "interference":
+	case "board", "draw", "news", "push", "showcase", "nowplaying", "karaoke", "hud", "dashboard", "interference",
+		"bigclock", "worldclock", "headlines", "weather", "ascii", "newsreel",
+		"flights", "quakes", "onthisday", "moon", "countdown", "markets", "calendar", "air", "wordclock":
 		return true
 	}
-	return strings.HasPrefix(n, "media:")
+	return strings.HasPrefix(n, "media:") || strings.HasPrefix(n, "newsreel:")
 }
 
 // makeItem builds one playlist entry: board and news run one pass, everything else runs for
@@ -187,14 +190,26 @@ const newsEvery = 10 * time.Minute
 func (e *Engine) newsFile() string { return filepath.Join(e.paths.Dir, "news.txt") }
 
 func (e *Engine) newsProgram(passes int) Program {
+	e.startNews()
+	p := newBoardProgram(e.newsFile(), passes)
+	return &named{Program: p, name: "news"}
+}
+
+// startNews begins the background fetcher once.
+func (e *Engine) startNews() {
 	e.newsOnce.Do(func() {
 		if _, err := os.Stat(e.newsFile()); err != nil {
 			_ = os.WriteFile(e.newsFile(), []byte("@step=3\n[orange]News[/] [grey]fetching headlines…\n"), 0o644)
 		}
 		go e.newsLoop()
 	})
-	p := newBoardProgram(e.newsFile(), passes)
-	return &named{Program: p, name: "news"}
+}
+
+// Headlines returns the latest fetched headlines and when they were fetched.
+func (e *Engine) Headlines() ([]feeds.Headline, time.Time) {
+	e.newsMu.Lock()
+	defer e.newsMu.Unlock()
+	return e.news, e.newsAt
 }
 
 type named struct {
@@ -219,22 +234,37 @@ func (e *Engine) newsLoop() {
 func (e *Engine) RefreshNews() error {
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
-	var hs []feeds.Headline
+	// The headlines wall shows more than the ticker, which keeps to 15 HN / 10 per feed. With no
+	// news-sources.txt the wall also carries BBC News, which the ticker leaves out.
+	srcs, custom := e.newsSources()
+	wallOnly := map[string]bool{}
+	if !custom {
+		srcs = append(srcs, BBCNewsFeed)
+		wallOnly[BBCNewsFeed] = true
+	}
+	var bySource [][]feeds.Headline
+	var ticker []feeds.Headline
 	var errs []string
-	for _, src := range e.newsSources() {
+	for _, src := range srcs {
 		var got []feeds.Headline
 		var err error
+		n := 10
 		if src == "hn" {
-			got, err = feeds.FetchHN(ctx, 15)
+			got, err = feeds.FetchHN(ctx, 40)
+			n = 15
 		} else {
-			got, err = feeds.FetchRSS(ctx, src, 10)
+			got, err = feeds.FetchRSS(ctx, src, 25)
 		}
 		if err != nil {
 			errs = append(errs, err.Error())
 			continue
 		}
-		hs = append(hs, got...)
+		bySource = append(bySource, got)
+		if !wallOnly[src] {
+			ticker = append(ticker, got[:min(n, len(got))]...)
+		}
 	}
+	hs := interleave(bySource)
 	if len(hs) == 0 {
 		msg := strings.Join(errs, "; ")
 		e.log.Warn("news unavailable", "err", msg)
@@ -243,7 +273,33 @@ func (e *Engine) RefreshNews() error {
 		}
 		return fmt.Errorf("news: %s", msg)
 	}
-	return os.WriteFile(e.newsFile(), []byte(feeds.BoardText(hs)), 0o644)
+	e.newsMu.Lock()
+	e.news, e.newsAt = hs, time.Now()
+	e.newsMu.Unlock()
+	if len(ticker) == 0 {
+		return nil // only the wall's own source answered; keep the ticker as it was
+	}
+	return os.WriteFile(e.newsFile(), []byte(feeds.BoardText(ticker)), 0o644)
+}
+
+// BBCNewsFeed is the BBC News front page, added to the headlines wall by default.
+var BBCNewsFeed = "https://feeds.bbci.co.uk/news/rss.xml"
+
+// interleave takes one headline from each source in turn, so the wall mixes them.
+func interleave(lists [][]feeds.Headline) []feeds.Headline {
+	var out []feeds.Headline
+	for i := 0; ; i++ {
+		added := false
+		for _, l := range lists {
+			if i < len(l) {
+				out = append(out, l[i])
+				added = true
+			}
+		}
+		if !added {
+			return out
+		}
+	}
 }
 
 func isPlaceholder(path string) bool {
@@ -251,10 +307,12 @@ func isPlaceholder(path string) bool {
 	return strings.Contains(string(b), "[grey]fetching") || strings.Contains(string(b), "unavailable")
 }
 
-func (e *Engine) newsSources() []string {
+// newsSources lists the configured sources; custom is false when news-sources.txt is missing
+// or lists nothing usable, and Hacker News alone is returned.
+func (e *Engine) newsSources() (srcs []string, custom bool) {
 	b, err := os.ReadFile(filepath.Join(e.paths.Dir, "news-sources.txt"))
 	if err != nil {
-		return []string{"hn"}
+		return []string{"hn"}, false
 	}
 	var out []string
 	for _, l := range strings.Split(string(b), "\n") {
@@ -269,7 +327,47 @@ func (e *Engine) newsSources() []string {
 		}
 	}
 	if len(out) == 0 {
-		return []string{"hn"}
+		return []string{"hn"}, false
 	}
-	return out
+	return out, true
+}
+
+// newsreelSource is the first line of newsreel.txt (a preset name or feed URL), else BBC News.
+func (e *Engine) newsreelSource() string {
+	if b, err := os.ReadFile(filepath.Join(e.paths.Dir, "newsreel.txt")); err == nil {
+		for _, l := range strings.Split(string(b), "\n") {
+			if l = strings.TrimSpace(l); l != "" && !strings.HasPrefix(l, "#") {
+				return l
+			}
+		}
+	}
+	return "bbc"
+}
+
+// calendarArea is the first line of calendar.txt: a gov.uk bank holiday area, or "none".
+func (e *Engine) calendarArea() string {
+	if b, err := os.ReadFile(filepath.Join(e.paths.Dir, "calendar.txt")); err == nil {
+		for _, l := range strings.Split(string(b), "\n") {
+			if l = strings.ToLower(strings.TrimSpace(l)); l != "" && !strings.HasPrefix(l, "#") {
+				return l
+			}
+		}
+	}
+	return "england-and-wales"
+}
+
+// weatherPlace is the first line of weather.txt, else the message board's @location, else
+// London.
+func (e *Engine) weatherPlace() string {
+	if b, err := os.ReadFile(filepath.Join(e.paths.Dir, "weather.txt")); err == nil {
+		for _, l := range strings.Split(string(b), "\n") {
+			if l = strings.TrimSpace(l); l != "" && !strings.HasPrefix(l, "#") {
+				return l
+			}
+		}
+	}
+	if l := board.CurrentLocation(); l != "" {
+		return l
+	}
+	return "London"
 }

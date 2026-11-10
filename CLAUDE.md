@@ -65,7 +65,7 @@ and media frame timing are ports of Pillow behaviour. Don't "simplify" these int
 equivalents. Parity tests are opt-in via env vars pointing at Python reference output not in this
 repo (`PARITY_DIR`, `TEXT_PARITY`, `EMOJI_PARITY`, `DASH_PARITY`, `MEDIA_PARITY`,
 `MARQUEE_PARITY_DIR`, `MARQUEE_VIZ_PARITY` — table in `docs/DEVELOPMENT.md`); they skip otherwise.
-`HUD_PNG=DIR` and `NOWPLAYING_PNG=path` dump frames for eyeballing.
+`HUD_PNG=DIR`, `HIRES_PNG=DIR` and `NOWPLAYING_PNG=path` dump frames for eyeballing.
 
 ## Design
 
