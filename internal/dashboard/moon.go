@@ -80,18 +80,18 @@ func (m *Moon) render(img *image.RGBA, now time.Time) {
 	m.draw(img, moonCX, moonCY, moonR, age, true)
 
 	x := float64(moonRight)
-	caps(img, moonRight, pad-4, "the moon tonight", 600)
-	text(img, x, 76, strings.ToUpper(MoonPhase(age)), 64, ink)
-	text(img, x, 160, fmt.Sprintf("%.0f%% LIT   DAY %.1f OF %.1f", MoonIllumination(age)*100, age, synodic), 28, ink2)
+	head(img, moonRight, pad-4, "the moon tonight", 600)
+	text(img, x, 76, strings.ToUpper(MoonPhase(age)), 64, txt)
+	text(img, x, 160, fmt.Sprintf("%.0f%% LIT   DAY %.1f OF %.1f", MoonIllumination(age)*100, age, synodic), 28, amber)
 
 	nextFull := now.Add(time.Duration(math.Mod(synodic/2-age+synodic, synodic) * 24 * float64(time.Hour)))
 	nextNew := now.Add(time.Duration((synodic - age) * 24 * float64(time.Hour)))
 	row := func(y int, label string, at time.Time) {
-		text(img, x, y, label, 22, ink3)
+		text(img, x, y, label, 22, cyan)
 		days := int(math.Round(at.Sub(now).Hours() / 24))
 		when := strings.ToUpper(at.Format("Mon 2 Jan"))
-		text(img, x+200, y-4, when, 30, ink)
-		text(img, x+520, y, fmt.Sprintf("IN %d DAYS", days), 22, ink2)
+		text(img, x+200, y-4, when, 30, txt)
+		text(img, x+520, y, fmt.Sprintf("IN %d DAYS", days), 22, amber)
 	}
 	row(222, "FULL MOON", nextFull)
 	row(266, "NEW MOON", nextNew)
@@ -108,9 +108,9 @@ func (m *Moon) render(img *image.RGBA, now time.Time) {
 			if i == 0 {
 				lbl = "TODAY"
 			}
-			c := ink3
+			c := txt3
 			if i == 0 {
-				c = ink2
+				c = txt2
 			}
 			text(img, float64(cx)-measure(lbl, 16)/2, sy+int(r)+14, lbl, 16, c)
 		}
@@ -122,7 +122,7 @@ func (m *Moon) render(img *image.RGBA, now time.Time) {
 func (m *Moon) draw(img *image.RGBA, cx, cy int, r float64, age float64, textured bool) {
 	cosPhi := math.Cos(2 * math.Pi * age / synodic)
 	waxing := age < synodic/2
-	lit := ink
+	lit := txt
 	dark := color.RGBA{30, 31, 28, 255}
 	ri := int(r) + 1
 	for j := -ri; j <= ri; j++ {

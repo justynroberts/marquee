@@ -123,21 +123,21 @@ const cdSplit = 1260
 
 func (c *Countdown) render(img *image.RGBA, now time.Time) {
 	ups := c.list(now)
-	caps(img, pad, pad-4, "countdown", 600)
+	head(img, pad, pad-4, "countdown", 600)
 	if len(c.bad) > 0 {
 		msg := fmt.Sprintf("COUNTDOWN.TXT: CANNOT READ %q", c.bad[0])
 		text(img, float64(cdSplit-40)-measure(fit(msg, 18, 700), 18), pad-2, fit(msg, 18, 700), 18, hot)
 	}
 	if len(ups) == 0 {
-		text(img, pad, H/2-20, "NOTHING TO COUNT DOWN TO: ADD DATES TO COUNTDOWN.TXT", 30, ink3)
+		text(img, pad, H/2-20, "NOTHING TO COUNT DOWN TO: ADD DATES TO COUNTDOWN.TXT", 30, txt3)
 		return
 	}
 	u := ups[0]
 	days := daysUntil(now, u.at)
-	text(img, pad, 84, fit(strings.ToUpper(u.label), 48, cdSplit-pad-80), 48, ink)
-	text(img, pad, 146, strings.ToUpper(u.at.Format("Monday 2 January 2006")), 24, ink3)
+	text(img, pad, 84, fit(strings.ToUpper(u.label), 48, cdSplit-pad-80), 48, cyan)
+	text(img, pad, 146, strings.ToUpper(u.at.Format("Monday 2 January 2006")), 24, txt2)
 	var big, unit string
-	col := ink
+	col := amber
 	switch {
 	case days == 0 && now.Before(u.at):
 		d := u.at.Sub(now).Round(time.Second)
@@ -155,19 +155,19 @@ func (c *Countdown) render(img *image.RGBA, now time.Time) {
 	adv := text(img, pad, by, big, px, col)
 	if unit != "" {
 		ub := inkBox(unit, 54)
-		text(img, float64(pad)+adv+28, by+b.Max.Y-ub.Max.Y, unit, 54, ink2)
+		text(img, float64(pad)+adv+28, by+b.Max.Y-ub.Max.Y, unit, 54, txt)
 	}
 	if days > 0 {
 		weeks := fmt.Sprintf("%d WEEKS %d DAYS", days/7, days%7)
 		if days < 7 {
 			weeks = fmt.Sprintf("%d HOURS", int(u.at.Sub(now).Hours()))
 		}
-		text(img, float64(cdSplit-40)-measure(weeks, 24), 150, weeks, 24, ink3)
+		text(img, float64(cdSplit-40)-measure(weeks, 24), 150, weeks, 24, txt3)
 	}
-	vline(img, cdSplit)
+	vrule(img, cdSplit)
 
 	x := float64(cdSplit + 40)
-	caps(img, cdSplit+40, pad-4, "after that", W-pad-cdSplit-40)
+	head(img, cdSplit+40, pad-4, "after that", W-pad-cdSplit-40)
 	for i, u := range ups[1:] {
 		if i >= 6 {
 			break
@@ -175,8 +175,8 @@ func (c *Countdown) render(img *image.RGBA, now time.Time) {
 		y := 84 + i*58
 		d := daysUntil(now, u.at)
 		n := fmt.Sprintf("%d", d)
-		text(img, x, y, fit(strings.ToUpper(u.label), 26, float64(W-pad)-x-140), 26, ink)
-		text(img, x, y+30, strings.ToUpper(u.at.Format("Mon 2 Jan 2006")), 16, ink3)
-		text(img, float64(W-pad)-measure(n, 34), y-4, n, 34, ink2)
+		text(img, x, y, fit(strings.ToUpper(u.label), 26, float64(W-pad)-x-140), 26, cyan)
+		text(img, x, y+30, strings.ToUpper(u.at.Format("Mon 2 Jan 2006")), 16, txt3)
+		text(img, float64(W-pad)-measure(n, 34), y-4, n, 34, amber)
 	}
 }

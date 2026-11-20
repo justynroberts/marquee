@@ -6,6 +6,8 @@
   <key>com.apple.security.device.audio-input</key><true/>
   <!-- Camera scenes read the webcam. -->
   <key>com.apple.security.device.camera</key><true/>
+  <!-- Weather, flights and air quality use this Mac's location. -->
+  <key>com.apple.security.personal-information.location</key><true/>
   <!-- Now Playing asks Music and Spotify for the current track over Apple Events. -->
   <key>com.apple.security.automation.apple-events</key><true/>
 </dict>

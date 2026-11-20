@@ -41,6 +41,8 @@ brightness and other display settings across restarts. `GET /v1/programs` lists 
 | `bounce` | An emoji bouncing around the panel, changing on every wall hit |
 | `fireworks` | Rockets that burst into coloured sparks |
 | `aquarium` | Emoji fish, rising bubbles and swaying weed |
+| `neon` | (camera) You traced in glowing outlines whose colour drifts across the panel, with light trails |
+| `clones` | (camera) Delayed copies of you, each in its own colour, trailing every move |
 | `flock` | A murmuration: birds wheeling and turning together, scattering when a hawk crosses |
 
 **Full-resolution screens** are drawn at the panel's native 1920 x 462, so small text stays sharp:
@@ -55,10 +57,41 @@ brightness and other display settings across restarts. `GET /v1/programs` lists 
 | `flights` | Aircraft overhead: a radar that zooms in on busy skies, planes moved on between fetches by their own speed and track, and the nearest airborne ones listed with type, altitude, speed, distance and bearing. An emergency squawk is in vermilion |
 | `quakes` | Earthquakes: the last day's M2.5+ and last 30 days' M4.5+ on a world map, which between them trace the plate boundaries, and the latest listed. M6+ is in vermilion; a quake in the last hour pulses |
 | `onthisday` | Wikipedia's "on this day": one event every 12 seconds, its year large on the left |
+| `warroom` | A cold-war strategic simulation on a vector world map: DEFCON climbs, two blocs trade growing waves of missiles, impacts bloom and the counters run, and every run ends with no winner before the next scenario begins (about 45 seconds each) |
+| `sun` | Today's daylight where you are: the sun's path over the horizon with where it is now, dawn, sunrise, noon, sunset and dusk, and how much longer or shorter the day is than yesterday |
+| `claude` | Claude Code on this Mac: today's output, input and cache tokens and API calls, output by the hour, the last seven days, the sessions running now (working ones pulse) with each conversation's size, and today's projects |
+| `claudelive` | What Claude Code is doing this moment, from its hooks: each session's current tool large with the file, command or search it is on, and the latest calls (see "Live Claude activity") |
+| `widgets` | A board of readings posted by your scripts, CI or cloud tools (see "Widgets") |
+| `claudehive` | Each running Claude Code session as an orb ringed by how full its conversation is: working ones spin the Claude spark and throw sparks across to the big spark (which spins faster the more tokens flow), idle ones doze. A rolling counter of today's output |
+| `claudecity` | Your week with Claude Code as a city at night: a district a day, a tower an hour as tall as its output, windows lit; this hour's tower goes up under a crane with a blinking light |
+| `claudeflow` | Today's output as a river, one band per project as wide as its output each hour, with sparks drifting downstream as fast as tokens are arriving |
+| `claudeclock` | The Claude spark as a 24-hour clock filling the panel: one ray an hour, as long as that hour's output, midnight at the top; the hour now breathes as tokens arrive and a hand sweeps round. Today's total large on the left, the peak hour and busiest project on the right |
+| `claudeorbit` | The spark as a sun with each running session a planet in orbit: size is today's output, the ring how full the conversation is; working planets race round and stream sparks into the sun |
+| `claudeburst` | A firework for every reply Claude writes, as big as its output and in its project's colour, labelled where it bursts; when nothing new arrives it replays the day's replies, dimmer |
+| `claudemeter` | Three big gauges: output tokens a minute, the fullest running conversation's context, and the cache hit rate; needles swing to each reading and tremble while Claude works |
+| `claudelimits` | How much of your Claude Pro or Max plan is left: the five-hour session and the week as big "percent left" figures over fuel bars, with reset times, a pace mark (how far through the window you are, so you can see if you are burning ahead of it) and the week split by app. It reads the login Claude Code keeps in your Keychain and asks Anthropic for the same figures `/usage` shows, every 3 minutes; the token goes only to api.anthropic.com and is never stored or shown. If Claude Code's login has lapsed, open Claude Code once to renew it |
+| `claudediary` | Claude's diary on an old candle-lit page. A quill writes each entry in real handwriting: the nib follows the strokes, slows over letters, lifts across the gaps and draws the underline. The iron-gall ink goes on blue-black and dries to sepia, the odd blot drops from the nib, and after a while the ink soaks back into the paper until the page is blank for the next entry. Entries rotate: the plan left (and whether you are pacing yourself), today's work (replies, projects, when you began and your busiest hour, which models), the latest calls in words ("At 14:02 I edited claudediary.go in marquee"), what each running session is doing, a tally of today's edits, commands, reads and searches (from the hooks), the week, and now and then a quotation copied out and signed in red |
+| `diary` | The same page as a day book: the weather where you are, two BBC headlines, the Claude plan, on this day in history (the year written large), two Hacker News stories, the light (sunrise, sunset, how much shorter or longer the day is than yesterday, and how far off the solstice is), the moon, today's Claude work, and two quotations from writers long out of copyright. Headlines and quotations move on each time round |
+| `commonplace` | A commonplace book: one quotation after another, copied out by the quill and signed in red |
+| `naturediary` | A nature diary: the weather, the light (sunrise, sunset, the days drawing in or out), the moon and the odd quotation |
+| `newsdiary` | The day's papers written up by hand: BBC and Hacker News headlines and on this day in history |
+| `progress` | Time as progress bars ticking live: this hour, today, this week, month, quarter and year (the year's percentage large), with day of the year, ISO week, days left and working days left this month |
+| `pomodoro` | A focus timer: a 25-minute session starts when it plays, then a 5-minute break, with a long break every fourth. Huge minutes and seconds, the phase in colour, the cycle's sessions and what comes next. Lengths in `focus.txt` |
+| `netwatch` | Internet health, measured every two seconds: connect time and loss to your router, Cloudflare (1.1.1.1) and Google (8.8.8.8), and DNS lookup time, with five minutes of history and ONLINE, SLOW or DOWN large |
+| `daynight` | The world in day and night: the terminator and twilight bands on a map, where the sun and moon are overhead, your place, and the world-clock cities with their local times |
+| `orrery` | The solar system now from above (distances compressed so all eight planets fit), each planet's distance from Earth in AU and light-minutes, and which are in the evening or morning sky |
 | `moon` | Tonight's moon drawn to its phase, illumination and age, the next full and new moons, and the next 30 nights |
 | `wordclock` | The time to the nearest five minutes spelled out in a grid of letters, with dots for the minutes in between |
 | `calendar` | This month with ISO week numbers, today in ink and bank holidays boxed; next month small and the next three bank holidays |
 | `markets` | Up to four cryptocurrencies from CoinGecko: price, the day's move (vermilion at 5% or more) and the last seven days |
+| `grid` | The electricity grid where you are (Great Britain): grams of CO2 per kWh now, the generation mix, the next 48 hours and the greenest three hours to run something heavy |
+| `aurora` | Will you see the northern lights? AuroraWatch UK's alert level, the last 24 hours of disturbance, and NOAA's Kp index past and forecast; a green curtain shimmers along the top at amber or red |
+| `iss` | The International Space Station on a world map: where it is, its track for the last and next 45 minutes, height, speed, whether it is in sunlight, and how far it is from you |
+| `launches` | Rocket launches coming up worldwide: a live T-minus countdown to the next with rocket, provider, pad and status, and the ones after it |
+| `rain` | Will it rain? A verdict large (dry for two hours, rain from 14:30, rain until 15:15), rain in 15-minute steps for the next two hours, and the next 12 hours |
+| `status` | Are the services you rely on up? Each status page's state in green, amber or vermilion, and the incidents for anything degraded. List in `status.txt` |
+| `fx` | Exchange rates: up to six currencies priced in your base (GBP by default) with the day's move and the last 30 days. Currencies in `fx.txt` |
+| `trains` | A National Rail station board: the next departures and arrivals with platform and running (green on time, amber late, vermilion cancelled) and the reason for a delay. Needs a free Rail Data Marketplace key |
 | `air` | Air quality: the European AQI, PM2.5, PM10, NO2 and ozone against WHO guideline levels, the next 48 hours, and pollen in Europe. Poor air is in vermilion |
 | `countdown` | Days until the next date in `countdown.txt` (hours, minutes and seconds on the day), and the ones after it |
 | `newsreel` | One news source crawling across the panel in mid-size type, two rows, alternate stories on each; `newsreel:bbc`, `newsreel:sky` and the other presets below pick a source |
@@ -229,6 +262,20 @@ in the menu also turns the HUD on; the command and API only change the setting.
 A flash (from the API, a webhook, PagerDuty or the schedule) takes the whole HUD in amber, mirrored
 like the rest. Timers keep their normal countdown look.
 
+## Settings
+
+Menu → **Settings…** (or **Settings** at the top of the web remote) opens a page on this Mac for
+everything the info screens show: your location (a UK postcode or a place), the world clock
+cities, the newsreel source, the news feeds, the coins, the countdown dates, the bank holidays,
+the train station and train times key, and the grid region. Each setting is checked when you save
+it: a postcode or place is looked up, a feed is fetched, a time zone is read. If it is wrong the
+page says why and nothing changes; if it is right, the line underneath says what Marquee
+understood, such as `Westminster  51.50, -0.14  ·  grid region SW1A`. **Use default** goes back to
+the default. The buttons beside each setting put the screens that use it on the panel.
+
+The page only works from this Mac, like API keys. It writes the same text files described below,
+so editing them by hand still works.
+
 ## News ticker
 
 `news` scrolls headlines across the panel: the source in orange, the title in white and, for
@@ -287,8 +334,17 @@ Austin = America/Chicago
 ```
 
 `weather` uses [Open-Meteo](https://open-meteo.com) (no key). It shows the place named on the
-first line of `weather.txt` in the data folder, else the message board's `@location`, else London.
-It refreshes every 15 minutes.
+first line of `weather.txt` in the data folder (a place name, or a full UK postcode, which is
+looked up with [postcodes.io](https://postcodes.io) and also sets the `grid` region), else the message board's `@location`, else where
+this Mac is, else London. It refreshes every 15 minutes.
+
+Where this Mac is comes from Location Services: macOS asks once, the first time a screen needs it.
+Marquee asks for an approximate fix (about a kilometre), has macOS name the town, and keeps the
+last fix in `location.json` so it is there at once after a restart; it asks again every three
+hours. The coordinates are rounded to two decimals (about a kilometre) before they are sent to
+Open-Meteo or adsb.lol. The board's `{weather}` and `{temp}` use it too when messages.txt has no
+`@location`. Turn it off in System Settings > Privacy & Security > Location Services, or name a
+place in `weather.txt`.
 
 `flights` shows the aircraft within 40 nautical miles of the same place, from
 [adsb.lol](https://adsb.lol) (no key), every 15 seconds. The place's coordinates are sent to
@@ -312,6 +368,47 @@ dogecoin
 currency = gbp
 ```
 
+`trains` shows Long Eaton (LGE) until you put another station's three-letter code on the first
+line of `trains.txt` (Nottingham is NOT, Derby DBY). The times are National Rail's own (Darwin),
+which are free but need a key:
+
+1. Register at [raildata.org.uk](https://raildata.org.uk) (free).
+2. Find the **Live Arrival and Departure Boards** product and subscribe (free).
+3. Copy the **Consumer key** from the product's Specification tab, open menu → **Settings…** and
+   paste it into **Train times key**. A new key can take half an hour to start working.
+
+The key is saved as `rail-key` in the data folder, readable only by you, and is sent only to the
+Rail Data Marketplace. The board refreshes every minute and covers the next two hours.
+
+`grid` uses the [Carbon Intensity API](https://carbonintensity.org.uk) (no key) for the region of
+this Mac's postcode district: the district comes from Location Services, or from
+[postcodes.io](https://postcodes.io) given the rounded coordinates. Put a district such as `SW1A`,
+or `gb` for the whole country, in `grid.txt` to choose. `aurora` reads
+[AuroraWatch UK](https://aurorawatch.lancs.ac.uk) and NOAA's
+[Kp forecast](https://www.swpc.noaa.gov) every ten minutes. `sun` is worked out on the Mac.
+
+`status` watches GitHub, Cloudflare, Anthropic, OpenAI, Atlassian and Vercel until you list
+services in `status.txt`, one per line: a preset name, or `Name = https://status.example.com`
+for any site run on Atlassian Statuspage. It checks every two minutes.
+
+`fx` prices USD, EUR, JPY, CHF, AUD and CAD in pounds; put a line such as `EUR: USD GBP` in
+`fx.txt` to change that. Rates are the European Central Bank's, published once each working
+day, via [Frankfurter](https://frankfurter.dev).
+
+`pomodoro` runs 25 minutes of focus and 5 of break, with a 15-minute break after every fourth
+session. `focus.txt` takes the minutes: `50 10`, or `50 10 30 3` for the long break and how
+often it comes.
+
+`claude` reads the conversation history Claude Code keeps in `~/.claude/projects` and its
+running sessions in `~/.claude/sessions`: the first time it reads the last week, then only what
+was added, every 20 seconds. Nothing is sent anywhere. Token counts are what the API reported
+for each reply; they are not your plan's usage limits, which Claude Code does not store.
+
+`iss` reads [wheretheiss.at](https://wheretheiss.at) every few seconds and `launches` reads
+[Launch Library 2](https://thespacedevs.com) every half hour. `rain` uses Open-Meteo for the
+weather place. `progress`, `daynight`, `orrery` and `netwatch` are worked out on the Mac
+(`netwatch` sends only TCP connection attempts, a ping to your router and DNS lookups).
+
 `calendar` marks bank holidays in England and Wales from gov.uk. Put `scotland`,
 `northern-ireland` or `none` in `calendar.txt` to change that.
 
@@ -334,6 +431,52 @@ play it again after editing.
 Fetch now with `POST /v1/news/refresh` (or the MCP `refresh_news` tool). The ticker is the message
 board reading `news.txt`, which Marquee rewrites; editing `news.txt` yourself is pointless. If every
 source fails, the ticker says the headlines are unavailable.
+
+## Widgets: push anything to the panel
+
+The `widgets` screen shows readings that your own scripts, CI jobs or cloud tools post: a
+label, a value in green, amber or vermilion, and a line of text. Post the same id again to
+update it.
+
+```bash
+curl -d '{"id":"build","label":"CI","value":"PASS","status":"ok"}' localhost:7781/v1/widgets
+curl -d '{"id":"queue","label":"Queue","value":"42","unit":"jobs"}' localhost:7781/v1/widgets
+curl -X DELETE localhost:7781/v1/widgets/queue
+```
+
+`status` is `ok`, `warn`, `bad` (pulses) or `info`; `ttl` (seconds) drops a reading when it goes
+stale; `flash: true` also flashes it. Other devices need an API key, as for any route. From
+Claude, the MCP tools `set_widget` and `delete_widget` do the same.
+
+**From the cloud (Grok Bot and the like).** A tool running elsewhere cannot reach this Mac, so it
+posts to a relay instead:
+
+1. Make up a long random topic name, such as `marquee-` followed by 12 random letters. Anyone who
+   knows it can post, so treat it like a password.
+2. Open menu → **Settings…** and paste `ntfy.sh/<topic>` into **Widget relay**.
+3. Add a final step to the cloud tool's routine that runs
+   `curl -d '{"id":"grok","label":"Grok Bot","value":"DONE","status":"ok","text":"…","flash":true}' ntfy.sh/<topic>`.
+
+Marquee checks the topic every 20 seconds. Plain text works too: `curl -H "Title: Grok Bot" -d
+"Retro drafted" ntfy.sh/<topic>` becomes a widget called Grok Bot. Messages pass through
+ntfy.sh, so don't send anything confidential.
+
+## Live Claude activity
+
+With Claude Code's hooks pointed at Marquee, `claudelive` shows what each session is doing this
+moment (its tool large, with the file, command or search it is working on, and a feed of the
+latest calls), and the `claudehive` orbs say what each session is running. Install the hook:
+
+1. Copy `scripts/claude-hook.sh` from this repository to `~/.claude/hooks/marquee-activity.sh`
+   and make it executable. It needs `jq`.
+2. Add it to `~/.claude/settings.json` for four events, each as
+   `{"type": "command", "command": "$HOME/.claude/hooks/marquee-activity.sh MODE", "async": true}`:
+   `PreToolUse` with `tool`, `PostToolUse` with `done`, `UserPromptSubmit` with `prompt` and
+   `Stop` with `stop`.
+
+The hook sends only the session id, the project folder, the tool's name and a short detail (a
+file's name, a command's description, a search pattern) to Marquee on this Mac. Your messages to
+Claude are not sent.
 
 ## Alerts and timers
 
@@ -450,19 +593,23 @@ minute, while Marquee is running; missed times are not caught up.
 ## Data folder
 
 Everything Marquee keeps is in `~/Library/Application Support/Marquee` (menu → **Show Data
-Folder**). On Linux it is `~/.config/marquee`; `marquee serve --data DIR` uses another folder.
+Folder**). The info screens' files can all be set from **Settings…** instead. On Linux it is `~/.config/marquee`; `marquee serve --data DIR` uses another folder.
 
 | File | |
 |---|---|
 | `messages.txt` | The message board. Yours to edit |
 | `schedule.txt` | The daily schedule. Yours to edit |
 | `news-sources.txt` | News ticker and headlines sources. Yours to create |
+| `grid.txt` | Postcode district (or `gb`) for `grid`. Yours to create |
+| `trains.txt` | Station code for `trains`. Yours to create |
+| `rail-key` | Rail Data Marketplace key for `trains` (mode 0600), saved from Settings |
 | `markets.txt` | Coins and currency for `markets`. Yours to create |
 | `calendar.txt` | Bank holiday area for `calendar`. Yours to create |
 | `countdown.txt` | Countdown dates. Yours to create |
+| `location.json` | This Mac's last location fix, written by Marquee |
 | `newsreel.txt` | The newsreel's source: a preset name or feed URL. Yours to create |
 | `world-clock.txt` | World clock cities. Yours to create |
-| `weather.txt` | The place for the weather screen, e.g. `Manchester`. Yours to create |
+| `weather.txt` | Where the weather, air, flights, sun and grid screens are for: a place such as `Manchester` or a UK postcode. Yours to create |
 | `pagerduty-token` | PagerDuty API key |
 | `playlists.json` | Custom playlists |
 | `media/` | Uploaded pictures and animations |
@@ -593,6 +740,8 @@ Tools:
 | `list_fonts` | Board font names |
 | `list_playlists`, `set_playlist`, `delete_playlist` | Custom playlists |
 | `refresh_news` | Fetch headlines now |
+| `list_settings` | The info screens' settings and their values |
+| `set_setting` | Check and save one setting (`id`, `value`) |
 | `hud` | HUD on or off, text, mirror, lyrics |
 | `brightness`, `pause`, `flip` | Display controls |
 | `show_image` | Show a local file or a URL (up to 10 MB) |

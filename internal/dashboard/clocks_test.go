@@ -151,6 +151,51 @@ func TestHiresFrames(t *testing.T) {
 		}
 		return a, nil
 	}
+	trn := NewTrains(func() string { return "LGE" }, func() string { return "tok" })
+	trn.fetch = func(tok, st string, win time.Duration) (*feeds.Board, error) {
+		b := &feeds.Board{Station: "Long Eaton"}
+		dests := []string{"London St Pancras International", "Nottingham", "Derby", "Leicester", "Sheffield", "Crewe", "Norwich"}
+		for i, d := range dests {
+			c := feeds.TrainCall{Time: now.Add(time.Duration(4+i*9) * time.Minute), Place: d, Platform: fmt.Sprint(1 + i%2), Operator: "East Midlands Railway"}
+			switch i {
+			case 0:
+				c.Delayed = true
+			case 2:
+				c.Late, c.Expected, c.Reason = 6, c.Time.Add(6*time.Minute), "a points failure"
+			case 4:
+				c.Cancelled, c.Reason = true, "a shortage of train crew"
+			}
+			b.Departures = append(b.Departures, c)
+			c.Place = dests[len(dests)-1-i]
+			b.Arrivals = append(b.Arrivals, c)
+		}
+		return b, nil
+	}
+	sun := NewSun(func() string { return "@52.90,-1.27|Long Eaton" })
+	grid := NewGridPower(func() string { return "SW1A" })
+	grid.fetch = func(string) (*feeds.Grid, error) {
+		g := &feeds.Grid{Region: "East Midlands", Intensity: 243, Index: "high",
+			Mix: []feeds.Fuel{{Name: "gas", Perc: 56}, {Name: "wind", Perc: 21}, {Name: "nuclear", Perc: 12}, {Name: "solar", Perc: 3}}}
+		for i := range 96 {
+			g.Forecast = append(g.Forecast, feeds.HalfHour{From: now.Add(time.Duration(i) * 30 * time.Minute), Intensity: 120 + int(120*math.Sin(float64(i)/9))})
+		}
+		return g, nil
+	}
+	aur := NewAurora()
+	aur.fetch = func() (*feeds.Aurora, error) {
+		a := &feeds.Aurora{Status: "amber"}
+		for i := range 24 {
+			a.Activity = append(a.Activity, feeds.AuroraHour{At: now.Add(time.Duration(i-24) * time.Hour), Value: float64(20 + i*6), Status: "green"})
+		}
+		for i := range 56 {
+			a.Kp = append(a.Kp, feeds.KpPoint{At: now.Add(time.Duration(i-32) * 3 * time.Hour), Kp: 2 + 3*math.Sin(float64(i)/5), Predicted: i > 32})
+		}
+		return a, nil
+	}
+	waitFor(sun, func() bool { sun.mu.Lock(); defer sun.mu.Unlock(); return sun.home != nil })
+	waitFor(grid, func() bool { grid.poll.mu.Lock(); defer grid.poll.mu.Unlock(); return grid.poll.ok })
+	waitFor(aur, func() bool { aur.poll.mu.Lock(); defer aur.poll.mu.Unlock(); return aur.poll.ok })
+	waitFor(trn, func() bool { trn.poll.mu.Lock(); defer trn.poll.mu.Unlock(); return trn.poll.ok })
 	waitFor(mk, func() bool { mk.poll.mu.Lock(); defer mk.poll.mu.Unlock(); return mk.poll.ok })
 	waitFor(cal, func() bool { cal.poll.mu.Lock(); defer cal.poll.mu.Unlock(); return cal.poll.ok })
 	waitFor(aq, func() bool { aq.poll.mu.Lock(); defer aq.poll.mu.Unlock(); return aq.poll.ok })
@@ -175,6 +220,11 @@ func TestHiresFrames(t *testing.T) {
 		"calendar":   cal,
 		"air":        aq,
 		"wordclock":  NewWordClock(),
+		"trains":     trn,
+		"sun":        sun,
+		"grid":       grid,
+		"aurora":     aur,
+		"warroom":    NewWarRoom(),
 	}
 	for name, v := range visuals {
 		img := v.Frame(0, 0, now)
@@ -183,7 +233,7 @@ func TestHiresFrames(t *testing.T) {
 		}
 		lit := 0
 		for i := 0; i < len(img.Pix); i += 4 {
-			if img.Pix[i] > 100 {
+			if max(img.Pix[i], img.Pix[i+1], img.Pix[i+2]) > 100 {
 				lit++
 			}
 		}
@@ -331,5 +381,20 @@ func TestLoadMarkets(t *testing.T) {
 	}
 	if money(73915.4) != "73,915" || money(0.000123) != "0.0001230" {
 		t.Errorf("money: %s %s", money(73915.4), money(0.000123))
+	}
+}
+
+func TestSunTimes(t *testing.T) {
+	// Long Eaton, 10 November 2026: sunrise about 07:19, sunset about 16:18 (GMT)
+	d := SunTimes(time.Date(2026, 11, 10, 12, 0, 0, 0, time.UTC), 52.90, -1.27)
+	for _, c := range []struct {
+		name string
+		got  time.Time
+		h, m int
+	}{{"sunrise", d.Rise, 7, 19}, {"sunset", d.Set, 16, 18}} {
+		want := time.Date(2026, 11, 10, c.h, c.m, 0, 0, time.UTC)
+		if diff := c.got.Sub(want); diff < -3*time.Minute || diff > 3*time.Minute {
+			t.Errorf("%s %s, want about %s", c.name, c.got.Format("15:04"), want.Format("15:04"))
+		}
 	}
 }

@@ -18,6 +18,7 @@ import (
 	"runtime"
 	"strings"
 	"sync"
+	"sync/atomic"
 	"time"
 
 	"github.com/shirou/gopsutil/v4/cpu"
@@ -56,7 +57,120 @@ var monoPaths = []struct {
 	index int
 }{{"/System/Library/Fonts/SFNSMono.ttf", 0}, {"/System/Library/Fonts/Menlo.ttc", 0}, {"/usr/share/fonts/truetype/dejavu/DejaVuSansMono.ttf", 0}}
 
+// The newer screens draw in SF Mono Bold, which reads far better on the LEDs; the system
+// dashboard keeps the regular weight so it still matches dashboard.py pixel for pixel.
+var boldPaths = []struct {
+	path  string
+	index int
+}{{"/System/Applications/Utilities/Terminal.app/Contents/Resources/Fonts/SF-Mono-Bold.otf", 0},
+	{"/Applications/Utilities/Terminal.app/Contents/Resources/Fonts/SF-Mono-Bold.otf", 0},
+	{"/System/Library/Fonts/Menlo.ttc", 1}, {"/usr/share/fonts/truetype/dejavu/DejaVuSansMono-Bold.ttf", 0}}
+
+// regularText is set while the system dashboard draws.
+var regularText atomic.Bool
+
+// A few screens use another face for variety: a condensed DIN for the number-led ones, a bold
+// serif for news and history, a slab for the weather and a geometric sans for the playful Claude
+// screens. UseFont picks one for the frames that follow ("" is SF Mono Bold); FontFor says which
+// a program uses. Missing fonts fall back to SF Mono Bold.
+var fontFamilies = map[string][]struct {
+	path  string
+	index int
+}{
+	"din":     {{"/System/Library/Fonts/Supplemental/DIN Alternate Bold.ttf", 0}},
+	"serif":   {{"/System/Library/Fonts/Supplemental/Georgia Bold.ttf", 0}},
+	"slab":    {{"/System/Library/Fonts/Supplemental/Rockwell.ttc", 2}},
+	"avenir":  {{"/System/Library/Fonts/Avenir Next.ttc", 0}},
+	"hand":    {{"embed:HomemadeApple-Regular.ttf", 0}, {"/System/Library/Fonts/Supplemental/Bradley Hand Bold.ttf", 0}},
+	"quill":   {{"embed:Meddon.ttf", 0}, {"/System/Library/Fonts/Supplemental/Apple Chancery.ttf", 0}},
+	"bradley": {{"/System/Library/Fonts/Supplemental/Bradley Hand Bold.ttf", 0}},
+}
+
+var programFonts = map[string]string{
+	"bigclock": "din", "worldclock": "din", "progress": "din", "pomodoro": "din", "fx": "din",
+	"markets": "din", "countdown": "din", "netwatch": "din", "claudemeter": "din", "claudelimits": "din", "claudediary": "hand", "diary": "hand", "commonplace": "hand", "naturediary": "hand", "newsdiary": "hand",
+	"onthisday": "serif", "newsreel": "serif", "headlines": "serif", "moon": "serif",
+	"weather": "slab", "rain": "slab", "sun": "slab", "air": "slab",
+	"claudehive": "avenir", "claudeorbit": "avenir", "claudeclock": "avenir", "claudeburst": "avenir",
+	"claudecity": "avenir", "claudeflow": "avenir",
+}
+
+var curFont atomic.Value // string
+
+// FontFor is the face a program draws in ("" for SF Mono Bold).
+func FontFor(program string) string {
+	if strings.HasPrefix(program, "newsreel:") {
+		return "serif"
+	}
+	return programFonts[program]
+}
+
+// faceFor is face(px), unless the chosen face lacks a character in s (DIN has no middle dot or
+// arrows), when the whole string falls back to SF Mono Bold so nothing shows as a box.
+func faceFor(s string, px int) *ft.Face {
+	f := face(px)
+	name, _ := curFont.Load().(string)
+	if name == "" || regularText.Load() || f == nil {
+		return f
+	}
+	key := name + "\x00" + s
+	covered, ok := coverCache.Load(key)
+	if !ok {
+		all := true
+		for _, g := range f.Shape(s) {
+			if g.ID == 0 {
+				all = false
+				break
+			}
+		}
+		if coverN.Add(1) > 20000 {
+			coverCache.Clear()
+			coverN.Store(0)
+		}
+		coverCache.Store(key, all)
+		covered = all
+	}
+	if covered.(bool) {
+		return f
+	}
+	if name == "hand" || name == "quill" {
+		return faceNamed("bradley", px) // stay handwritten for a character the face lacks
+	}
+	return faceNamed("", px)
+}
+
+var (
+	coverCache sync.Map
+	coverN     atomic.Int64
+)
+
+// UseFont sets the face for the frames that follow.
+func UseFont(name string) { curFont.Store(name) }
+
 func face(px int) *ft.Face {
+	name, _ := curFont.Load().(string)
+	return faceNamed(name, px)
+}
+
+func faceNamed(name string, px int) *ft.Face {
+	if name != "" && !regularText.Load() {
+		for _, p := range fontFamilies[name] {
+			path := p.path
+			if strings.HasPrefix(path, "embed:") {
+				path = embeddedFontPath(path[6:])
+			}
+			if f, err := ft.Open(path, p.index, px); err == nil {
+				return f
+			}
+		}
+	}
+	if !regularText.Load() {
+		for _, p := range boldPaths {
+			if f, err := ft.Open(p.path, p.index, px); err == nil {
+				return f
+			}
+		}
+	}
 	for _, p := range monoPaths {
 		if f, err := ft.Open(p.path, p.index, px); err == nil {
 			return f
@@ -68,7 +182,7 @@ func face(px int) *ft.Face {
 // text is ImageDraw.text((x, y), s, font=font(px), fill=c) on an RGB image; returns the
 // advance (ImageDraw.textlength) so callers can chain positions like dashboard.py.
 func text(dst *image.RGBA, x float64, y int, s string, px int, c color.RGBA) float64 {
-	f := face(px)
+	f := faceFor(s, px)
 	if f == nil {
 		return 0
 	}
@@ -102,7 +216,7 @@ func blend(m uint32, in1, in2 uint8) uint8 {
 
 // measure is ImageDraw.textlength.
 func measure(s string, px int) float64 {
-	if f := face(px); f != nil {
+	if f := faceFor(s, px); f != nil {
 		return f.Length(s)
 	}
 	return 0
@@ -343,6 +457,8 @@ func (d *Dashboard) Render() *image.RGBA {
 }
 
 func (d *Dashboard) renderAt(s sample, now time.Time) *image.RGBA {
+	regularText.Store(true)
+	defer regularText.Store(false)
 	img := image.NewRGBA(image.Rect(0, 0, W, H))
 	fill(img, bg)
 	pick := func(isHot bool) color.RGBA {

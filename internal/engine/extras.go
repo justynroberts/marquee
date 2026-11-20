@@ -14,6 +14,7 @@ import (
 
 	"github.com/justynroberts/marquee/internal/board"
 	"github.com/justynroberts/marquee/internal/feeds"
+	"github.com/justynroberts/marquee/internal/location"
 )
 
 // ---------------------------------------------------------------- custom playlists
@@ -118,7 +119,8 @@ func reservedName(n string) bool {
 	switch n {
 	case "board", "draw", "news", "push", "showcase", "nowplaying", "karaoke", "hud", "dashboard", "interference",
 		"bigclock", "worldclock", "headlines", "weather", "ascii", "newsreel",
-		"flights", "quakes", "onthisday", "moon", "countdown", "markets", "calendar", "air", "wordclock":
+		"flights", "quakes", "onthisday", "moon", "countdown", "markets", "calendar", "air", "wordclock", "trains", "sun", "grid", "aurora", "warroom",
+		"claude", "claudelive", "widgets", "claudehive", "claudecity", "claudeflow", "claudeclock", "claudeorbit", "claudeburst", "claudemeter", "claudelimits", "claudediary", "diary", "commonplace", "naturediary", "newsdiary", "progress", "pomodoro", "daynight", "orrery", "netwatch", "iss", "launches", "rain", "status", "fx":
 		return true
 	}
 	return strings.HasPrefix(n, "media:") || strings.HasPrefix(n, "newsreel:")
@@ -344,6 +346,52 @@ func (e *Engine) newsreelSource() string {
 	return "bbc"
 }
 
+// trainStation is the first line of trains.txt: a station's three-letter code. Long Eaton
+// (LGE) when there is no file.
+func (e *Engine) trainStation() string {
+	if b, err := os.ReadFile(filepath.Join(e.paths.Dir, "trains.txt")); err == nil {
+		for _, l := range strings.Split(string(b), "\n") {
+			if l = strings.TrimSpace(l); l != "" && !strings.HasPrefix(l, "#") {
+				return strings.ToUpper(strings.Fields(l)[0])
+			}
+		}
+	}
+	return "LGE"
+}
+
+// TrainTokenFile holds the Rail Data Marketplace consumer key for train times (mode 0600).
+func (e *Engine) TrainTokenFile() string { return filepath.Join(e.paths.Dir, "rail-key") }
+
+func (e *Engine) trainToken() string {
+	b, _ := os.ReadFile(e.TrainTokenFile())
+	return strings.TrimSpace(string(b))
+}
+
+// gridOutcode is the postcode district for the grid screen: grid.txt's first line, else this
+// Mac's (from Location Services), else "" for all of Great Britain.
+func (e *Engine) gridOutcode() string {
+	if b, err := os.ReadFile(filepath.Join(e.paths.Dir, "grid.txt")); err == nil {
+		for _, l := range strings.Split(string(b), "\n") {
+			if l = strings.TrimSpace(l); l != "" && !strings.HasPrefix(l, "#") {
+				if strings.EqualFold(l, "gb") || strings.EqualFold(l, "national") {
+					return ""
+				}
+				return strings.ToUpper(strings.Fields(l)[0])
+			}
+		}
+	}
+	if pc, ok := feeds.UKPostcode(e.weatherPlace()); ok {
+		return feeds.Outcode(pc)
+	}
+	if f, ok, _ := location.Current(); ok {
+		if f.Outcode != "" {
+			return f.Outcode
+		}
+		return f.Place() // the grid screen finds the district from the rounded coordinates
+	}
+	return ""
+}
+
 // calendarArea is the first line of calendar.txt: a gov.uk bank holiday area, or "none".
 func (e *Engine) calendarArea() string {
 	if b, err := os.ReadFile(filepath.Join(e.paths.Dir, "calendar.txt")); err == nil {
@@ -356,8 +404,8 @@ func (e *Engine) calendarArea() string {
 	return "england-and-wales"
 }
 
-// weatherPlace is the first line of weather.txt, else the message board's @location, else
-// London.
+// weatherPlace is where the weather, flights and air quality are for: the first line of
+// weather.txt, else the message board's @location, else this Mac's own location, else London.
 func (e *Engine) weatherPlace() string {
 	if b, err := os.ReadFile(filepath.Join(e.paths.Dir, "weather.txt")); err == nil {
 		for _, l := range strings.Split(string(b), "\n") {
@@ -369,5 +417,16 @@ func (e *Engine) weatherPlace() string {
 	if l := board.CurrentLocation(); l != "" {
 		return l
 	}
+	if p := e.macPlace(); p != "" {
+		return p
+	}
 	return "London"
+}
+
+// macPlace is this Mac's location from Core Location (or the last one saved), or "".
+func (e *Engine) macPlace() string {
+	if f, ok, _ := location.Current(); ok {
+		return f.Place()
+	}
+	return ""
 }

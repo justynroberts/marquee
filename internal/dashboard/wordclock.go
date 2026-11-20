@@ -76,6 +76,18 @@ func WordsFor(t time.Time) map[string]bool {
 	return w
 }
 
+// wordColour: the hour amber, morning/afternoon/evening/night cyan, the rest paper white.
+func wordColour(key string) color.RGBA {
+	switch key {
+	case "in", "the", "morning", "afternoon", "evening", "at", "night":
+		return cyan
+	}
+	if key[0] == 'h' && key != "half" {
+		return amber
+	}
+	return txt
+}
+
 func itoa(n int) string {
 	if n >= 10 {
 		return string(rune('0'+n/10)) + string(rune('0'+n%10))
@@ -91,7 +103,7 @@ func (c *WordClock) Frame(t, dt float64, now time.Time) *image.RGBA {
 
 func (c *WordClock) render(img *image.RGBA, now time.Time) {
 	lit := WordsFor(now)
-	off := color.RGBA{34, 35, 31, 255}
+	off := color.RGBA{48, 49, 44, 255}
 	cw := float64(W-2*pad) / wcCols
 	ch := 62
 	px := 46
@@ -101,7 +113,7 @@ func (c *WordClock) render(img *image.RGBA, now time.Time) {
 		for _, tk := range row {
 			c := off
 			if tk.key != "" && lit[tk.key] {
-				c = ink
+				c = wordColour(tk.key)
 			}
 			for _, ch := range tk.text {
 				s := string(ch)
@@ -117,7 +129,7 @@ func (c *WordClock) render(img *image.RGBA, now time.Time) {
 	for i := 0; i < 4; i++ {
 		c := off
 		if i < n {
-			c = ink2
+			c = amber
 		}
 		x := W/2 + (i-2)*40 + 14
 		rect(img, x, y, x+11, y+11, c)

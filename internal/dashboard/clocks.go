@@ -13,15 +13,15 @@ import (
 
 // ---------------------------------------------------------------- shared
 
-// inkBox is the ink bounds of s at px relative to text()'s (x, y).
+// inkBox is the txt bounds of s at px relative to text()'s (x, y).
 func inkBox(s string, px int) image.Rectangle {
-	if f := face(px); f != nil {
+	if f := faceFor(s, px); f != nil {
 		return f.BBox(s)
 	}
 	return image.Rectangle{}
 }
 
-// fitPx is the largest size up to max whose ink for s fits w x h.
+// fitPx is the largest size up to max whose txt for s fits w x h.
 func fitPx(s string, max, w, h int) int {
 	px := max
 	for px > 8 {
@@ -79,8 +79,8 @@ func (c *BigClock) Frame(t, dt float64, now time.Time) *image.RGBA {
 	img := c.cache.get(now.Format("15:04:05"), func(img *image.RGBA) { c.render(img, now) })
 	sec := float64(now.Second()) + float64(now.Nanosecond())/1e9
 	y := H - 10
-	rect(img, 0, y, W-1, H-1, rule)
-	rect(img, 0, y, int(float64(W-1)*sec/60), H-1, hot)
+	rect(img, 0, y, W-1, H-1, line)
+	rect(img, 0, y, int(float64(W-1)*sec/60), H-1, amber)
 	return img
 }
 
@@ -88,22 +88,22 @@ func (c *BigClock) render(img *image.RGBA, now time.Time) {
 	// date column
 	_, week := now.ISOWeek()
 	name, off := now.Zone()
-	text(img, pad, 44, strings.ToUpper(now.Format("Monday")), 44, ink2)
-	text(img, pad, 104, strings.ToUpper(now.Format("2 Jan")), 96, ink)
-	text(img, pad, 236, fmt.Sprintf("%d  W%02d", now.Year(), week), 40, ink2)
-	text(img, pad, 300, fmt.Sprintf("DAY %d", now.YearDay()), 28, ink3)
-	text(img, pad, 340, fmt.Sprintf("%s  UTC%s", name, utcOffset(off)), 28, ink3)
-	vline(img, bcLeft-40)
+	text(img, pad, 44, strings.ToUpper(now.Format("Monday")), 44, cyan)
+	text(img, pad, 104, strings.ToUpper(now.Format("2 Jan")), 96, txt)
+	text(img, pad, 236, fmt.Sprintf("%d  W%02d", now.Year(), week), 40, amber)
+	text(img, pad, 300, fmt.Sprintf("DAY %d", now.YearDay()), 28, txt3)
+	text(img, pad, 340, fmt.Sprintf("%s  UTC%s", name, utcOffset(off)), 28, txt3)
+	vrule(img, bcLeft-40)
 
-	// time, vertically centred on its ink
+	// time, vertically centred on its txt
 	hm := now.Format("15:04")
 	b := inkBox(hm, c.timePx)
 	y := (H-10-b.Dy())/2 - b.Min.Y
-	adv := text(img, bcLeft, y, hm, c.timePx, ink)
+	adv := text(img, bcLeft, y, hm, c.timePx, txt)
 	// seconds share the digits' baseline
 	sb := inkBox("00", c.secPx)
 	sy := y + b.Max.Y - sb.Max.Y
-	text(img, float64(bcLeft)+adv+24, sy, now.Format(":05"), c.secPx, ink2)
+	text(img, float64(bcLeft)+adv+24, sy, now.Format(":05"), c.secPx, amber)
 }
 
 func utcOffset(sec int) string {
@@ -219,7 +219,7 @@ func (c *WorldClock) render(img *image.RGBA, now time.Time) {
 	for i, z := range c.zones {
 		x := pad + i*colW
 		if i > 0 {
-			wideLine(img, x-20, pad, x-20, H-pad, rule, 2)
+			wideLine(img, x-20, pad, x-20, H-pad, line, 2)
 		}
 		lt := now.In(z.Loc)
 		_, off := lt.Zone()
@@ -228,20 +228,20 @@ func (c *WorldClock) render(img *image.RGBA, now time.Time) {
 		w := float64(colW - 40)
 
 		tag := strings.ToUpper(z.Label)
-		col := ink2
+		col := cyan
 		if off == here {
-			col = ink
+			col = amber
 		}
 		text(img, float64(x), pad, fit(tag, labelPx, w), labelPx, col)
 
-		tc := ink
+		tc := txt
 		if !day {
-			tc = ink2
+			tc = violet // night there
 		}
 		text(img, float64(x), timeTop-tb.Min.Y, lt.Format("15:04"), c.timePx, tc)
 
 		y := timeTop + tb.Dy() + 30
-		text(img, float64(x), y, strings.ToUpper(lt.Format("Mon 2 Jan")), 28, ink2)
+		text(img, float64(x), y, strings.ToUpper(lt.Format("Mon 2 Jan")), 28, txt2)
 		rel := "HERE"
 		if off != here {
 			rel = utcOffsetHours(off - here)
@@ -252,18 +252,18 @@ func (c *WorldClock) render(img *image.RGBA, now time.Time) {
 				rel += "  YESTERDAY"
 			}
 		}
-		text(img, float64(x), y+42, fit(rel, 24, w), 24, ink3)
+		text(img, float64(x), y+42, fit(rel, 24, w), 24, txt3)
 
 		// 24-hour strip
 		sy0, sy1 := H-pad-26, H-pad
 		sw := colW - 40
-		rect(img, x, sy0, x+sw, sy1, rule)
-		rect(img, x+sw*7/24, sy0, x+sw*19/24, sy1, color.RGBA{70, 69, 62, 255})
+		rect(img, x, sy0, x+sw, sy1, line)
+		rect(img, x+sw*7/24, sy0, x+sw*19/24, sy1, color.RGBA{120, 96, 40, 255}) // daylight
 		for hr := 0; hr < 24; hr += 6 {
-			text(img, float64(x+sw*hr/24), sy0-34, fmt.Sprintf("%02d", hr), 20, ink3)
+			text(img, float64(x+sw*hr/24), sy0-34, fmt.Sprintf("%02d", hr), 20, txt3)
 		}
 		mx := x + int(float64(sw)*h/24)
-		rect(img, mx-2, sy0-8, mx+2, sy1+8, ink)
+		rect(img, mx-2, sy0-8, mx+2, sy1+8, amber)
 	}
 }
 

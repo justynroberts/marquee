@@ -13,7 +13,7 @@ import (
 
 // Markets is cryptocurrency prices from CoinGecko, one column per coin: the price as large as
 // the column allows, the day's move, and the last seven days as a line between its low and high.
-// A move of 5% or more either way takes the accent.
+// Rises are green and falls vermilion.
 type Markets struct {
 	cfg   func() MarketsConfig
 	fetch func([]string, string) ([]feeds.Coin, error)
@@ -34,20 +34,24 @@ const maxCoins = 4
 
 // LoadMarkets reads path, defaulting to bitcoin, ethereum and solana in US dollars.
 func LoadMarkets(path string) MarketsConfig {
+	b, _ := os.ReadFile(path)
+	return ParseMarkets(string(b))
+}
+
+// ParseMarkets reads markets.txt's text.
+func ParseMarkets(text string) MarketsConfig {
 	c := MarketsConfig{Currency: "usd"}
-	if b, err := os.ReadFile(path); err == nil {
-		for _, l := range strings.Split(string(b), "\n") {
-			l = strings.ToLower(strings.TrimSpace(l))
-			if l == "" || strings.HasPrefix(l, "#") {
-				continue
-			}
-			if k, v, ok := strings.Cut(l, "="); ok && strings.TrimSpace(k) == "currency" {
-				c.Currency = strings.TrimSpace(v)
-				continue
-			}
-			if len(c.Coins) < maxCoins {
-				c.Coins = append(c.Coins, strings.Join(strings.Fields(l), "-"))
-			}
+	for _, l := range strings.Split(text, "\n") {
+		l = strings.ToLower(strings.TrimSpace(l))
+		if l == "" || strings.HasPrefix(l, "#") {
+			continue
+		}
+		if k, v, ok := strings.Cut(l, "="); ok && strings.TrimSpace(k) == "currency" {
+			c.Currency = strings.TrimSpace(v)
+			continue
+		}
+		if len(c.Coins) < maxCoins {
+			c.Coins = append(c.Coins, strings.Join(strings.Fields(l), "-"))
 		}
 	}
 	if len(c.Coins) == 0 {
@@ -106,9 +110,9 @@ func (m *Markets) Frame(t, dt float64, now time.Time) *image.RGBA {
 }
 
 func (m *Markets) render(img *image.RGBA, coins []feeds.Coin, cur string, got time.Time) {
-	caps(img, pad, pad-4, "markets  "+cur, 600)
+	head(img, pad, pad-4, "markets  "+cur, 600)
 	upd := "COINGECKO   " + got.Format("15:04")
-	text(img, float64(W-pad)-measure(upd, 22), pad-4, upd, 22, ink3)
+	text(img, float64(W-pad)-measure(upd, 22), pad-4, upd, 22, txt3)
 	n := len(coins)
 	gut := 60
 	cw := (W - 2*pad - (n-1)*gut) / n
@@ -116,23 +120,24 @@ func (m *Markets) render(img *image.RGBA, coins []feeds.Coin, cur string, got ti
 	for i, c := range coins {
 		x := pad + i*(cw+gut)
 		if i > 0 {
-			vline(img, x-gut/2)
+			vrule(img, x-gut/2)
 		}
-		text(img, float64(x), 84, c.Symbol, 30, ink)
-		text(img, float64(x)+measure(c.Symbol, 30)+16, 92, fit(strings.ToUpper(c.Name), 20, float64(cw)-measure(c.Symbol, 30)-16), 20, ink3)
+		text(img, float64(x), 84, c.Symbol, 30, cyan)
+		text(img, float64(x)+measure(c.Symbol, 30)+16, 92, fit(strings.ToUpper(c.Name), 20, float64(cw)-measure(c.Symbol, 30)-16), 20, txt3)
 		price := sign + money(c.Price)
 		px := fitPx(price, 96, cw, 110)
 		b := inkBox(price, px)
-		text(img, float64(x), 136-b.Min.Y, price, px, ink)
+		text(img, float64(x), 136-b.Min.Y, price, px, txt)
 		y := 136 + b.Dy() + 22
-		col := ink2
-		if math.Abs(c.Change24h) >= 5 {
+		// up green, down vermilion: the day's move is the reading that matters
+		col := green
+		if c.Change24h < 0 {
 			col = hot
 		}
 		chg := fmt.Sprintf("%+.2f%%  24H", c.Change24h)
 		text(img, float64(x), y, chg, 28, col)
 		hl := fmt.Sprintf("H %s  L %s", money(c.High24h), money(c.Low24h))
-		text(img, float64(x+cw)-measure(hl, 18), y+6, hl, 18, ink3)
+		text(img, float64(x+cw)-measure(hl, 18), y+6, hl, 18, txt3)
 
 		// seven days
 		sy0, sy1 := y+56, H-pad-22
@@ -148,13 +153,17 @@ func (m *Markets) render(img *image.RGBA, coins []feeds.Coin, cur string, got ti
 			for j, v := range c.Week {
 				pts[j] = [2]float64{float64(x) + float64(j)/float64(len(c.Week)-1)*float64(cw), float64(sy1) - (v-lo)/(hi-lo)*float64(sy1-sy0)}
 			}
-			rect(img, x, sy1, x+cw, sy1, rule)
-			polyline(img, pts, ink2, 2)
+			rect(img, x, sy1, x+cw, sy1, line)
+			wk := green
+			if c.Week[len(c.Week)-1] < c.Week[0] {
+				wk = hot
+			}
+			polyline(img, pts, wk, 2)
 			last := pts[len(pts)-1]
-			disc(img, last[0], last[1], 4, ink)
-			text(img, float64(x), sy1+6, "7 DAYS", 16, ink3)
+			disc(img, last[0], last[1], 5, txt)
+			text(img, float64(x), sy1+6, "7 DAYS", 16, txt3)
 			rng := fmt.Sprintf("%s – %s", money(lo), money(hi))
-			text(img, float64(x+cw)-measure(rng, 16), sy1+6, rng, 16, ink3)
+			text(img, float64(x+cw)-measure(rng, 16), sy1+6, rng, 16, txt3)
 		}
 	}
 }

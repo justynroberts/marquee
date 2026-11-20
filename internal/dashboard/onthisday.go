@@ -35,19 +35,19 @@ func (o *OnThisDay) Frame(t, dt float64, now time.Time) *image.RGBA {
 	i := int(t/otdEvery) % len(evs)
 	e := evs[i]
 	img := o.cache.get(fmt.Sprint(day, len(evs), i), func(img *image.RGBA) {
-		caps(img, pad, pad-4, "on this day  "+now.Format("2 January"), otdLeft-pad-40)
+		head(img, pad, pad-4, "on this day  "+now.Format("2 January"), otdLeft-pad-40)
 		pos := fmt.Sprintf("%d / %d", i+1, len(evs))
-		text(img, float64(W-pad)-measure(pos, 22), pad-4, pos, 22, ink3)
+		text(img, float64(W-pad)-measure(pos, 22), pad-4, pos, 22, txt2)
 		year := fmt.Sprint(e.Year)
 		if e.Year <= 0 {
 			year = fmt.Sprintf("%d BC", 1-e.Year)
 		}
 		px := fitPx(year, 170, otdLeft-pad-60, 200)
 		b := inkBox(year, px)
-		text(img, pad, 150-b.Min.Y, year, px, ink)
+		text(img, pad, 150-b.Min.Y, year, px, amber)
 		ago := now.Year() - e.Year
-		text(img, pad, 150+b.Dy()+30, fmt.Sprintf("%d YEARS AGO", ago), 26, ink2)
-		vline(img, otdLeft-30)
+		text(img, pad, 150+b.Dy()+30, fmt.Sprintf("%d YEARS AGO", ago), 26, cyan)
+		vrule(img, otdLeft-30)
 		// the event, as large as fits in five lines
 		w := float64(W - pad - otdLeft)
 		for px := otdPx; px >= 26; px -= 2 {
@@ -57,14 +57,14 @@ func (o *OnThisDay) Frame(t, dt float64, now time.Time) *image.RGBA {
 				lines = wrap(e.Text, px, w, 330/lh)
 				y := 96 + (330-len(lines)*lh)/2
 				for j, l := range lines {
-					text(img, otdLeft, y+j*lh, l, px, ink)
+					text(img, otdLeft, y+j*lh, l, px, txt)
 				}
 				break
 			}
 		}
-		rect(img, otdLeft, H-pad, W-pad, H-pad+2, rule)
+		rect(img, otdLeft, H-pad, W-pad, H-pad+2, line)
 	})
 	k := t/otdEvery - float64(int(t/otdEvery))
-	rect(img, otdLeft, H-pad, otdLeft+int(float64(W-pad-otdLeft)*k), H-pad+2, ink3)
+	rect(img, otdLeft, H-pad, otdLeft+int(float64(W-pad-otdLeft)*k), H-pad+2, cyan)
 	return img
 }

@@ -3,6 +3,7 @@ package dashboard
 import (
 	"fmt"
 	"image"
+	"image/color"
 	"strings"
 	"time"
 
@@ -46,7 +47,7 @@ func (p *Headlines) Frame(t, dt float64, now time.Time) *image.RGBA {
 	if len(hs) == 0 {
 		return p.empty.get("empty", func(img *image.RGBA) {
 			msg := "FETCHING HEADLINES…"
-			text(img, (W-measure(msg, 30))/2, H/2-20, msg, 30, ink3)
+			text(img, (W-measure(msg, 30))/2, H/2-20, msg, 30, txt3)
 		})
 	}
 	if p.strips == nil || !at.Equal(p.at) {
@@ -64,9 +65,10 @@ func (p *Headlines) Frame(t, dt float64, now time.Time) *image.RGBA {
 // layout wraps every headline and deals them to the shortest column, keeping their order.
 func (p *Headlines) layout(hs []feeds.Headline) {
 	type item struct {
-		meta  string
-		hot   bool
-		lines []string
+		meta   string
+		hot    bool
+		colour color.RGBA
+		lines  []string
 	}
 	cols := make([][]item, hlCols)
 	heights := make([]int, hlCols)
@@ -75,7 +77,7 @@ func (p *Headlines) layout(hs []feeds.Headline) {
 		if h.Points > 0 {
 			meta += fmt.Sprintf("  %d PTS", h.Points)
 		}
-		it := item{meta: fit(meta, hlMetaPx, float64(hlColW)), hot: h.Points >= hlHotPts, lines: wrap(h.Title, hlTitlePx, float64(hlColW), hlMaxLine)}
+		it := item{meta: fit(meta, hlMetaPx, float64(hlColW)), hot: h.Points >= hlHotPts, colour: sourceColour(h.Source), lines: wrap(h.Title, hlTitlePx, float64(hlColW), hlMaxLine)}
 		k := 0
 		for j := range heights {
 			if heights[j] < heights[k] {
@@ -92,18 +94,18 @@ func (p *Headlines) layout(hs []feeds.Headline) {
 		fill(img, bg)
 		y := 0
 		for _, it := range items {
-			c := ink3
+			c := it.colour
 			if it.hot {
 				c = hot
 			}
 			text(img, 0, y, it.meta, hlMetaPx, c)
 			y += hlMetaPx + 10
 			for _, l := range it.lines {
-				text(img, 0, y, l, hlTitlePx, ink)
+				text(img, 0, y, l, hlTitlePx, txt)
 				y += hlLine
 			}
 			y += hlGap - (hlLine - hlTitlePx)
-			rect(img, 0, y-hlGap/2, 40, y-hlGap/2, rule)
+			rect(img, 0, y-hlGap/2, 40, y-hlGap/2, line)
 		}
 		p.strips = append(p.strips, img)
 	}

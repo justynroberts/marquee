@@ -63,35 +63,28 @@ func (q *Quakes) Frame(t, dt float64, now time.Time) *image.RGBA {
 	return img
 }
 
-func quakeColour(m float64) color.RGBA {
-	if m >= qHot {
-		return hot
-	}
-	return ink
-}
+// quakeColour runs green for small quakes through amber to vermilion at magnitude 6.
+func quakeColour(m float64) color.RGBA { return ramp((m - 2.5) / (qHot - 2.5)) }
 
 func (q *Quakes) render(img *image.RGBA, d quakeData, now time.Time) {
-	caps(img, qmX, pad-4, "earthquakes  last 24 hours m2.5+  last 30 days m4.5+", qmW)
+	head(img, qmX, pad-4, "earthquakes  last 24 hours m2.5+  last 30 days m4.5+", qmW)
 	// graticule every 30 degrees
 	for lon := -180.0; lon <= 180; lon += 30 {
 		x, _ := qxy(0, lon)
-		rect(img, int(x), qmY, int(x), qmY+qmH, rule)
+		rect(img, int(x), qmY, int(x), qmY+qmH, line)
 	}
 	for lat := 60.0; lat >= -60; lat -= 30 {
 		_, y := qxy(lat, 0)
-		rect(img, qmX, int(y), qmX+qmW, int(y), rule)
+		rect(img, qmX, int(y), qmX+qmW, int(y), line)
 	}
 	for _, e := range d.week {
 		x, y := qxy(e.Lat, e.Lon)
-		disc(img, x, y, 1.6+(e.Mag-4.5)*1.4, ink3)
+		disc(img, x, y, 1.6+(e.Mag-4.5)*1.4, mix(bg, violet, 0.55))
 	}
 	for i := len(d.day) - 1; i >= 0; i-- { // oldest first, so the newest sit on top
 		e := d.day[i]
 		x, y := qxy(e.Lat, e.Lon)
-		c := ink2
-		if e.Mag >= qHot {
-			c = hot
-		}
+		c := quakeColour(e.Mag)
 		disc(img, x, y, 2+(e.Mag-2.5)*1.6, c)
 	}
 
@@ -102,25 +95,22 @@ func (q *Quakes) render(img *image.RGBA, d quakeData, now time.Time) {
 		biggest = math.Max(biggest, e.Mag)
 	}
 	head := fmt.Sprintf("%d TODAY   LARGEST M%.1f", len(d.day), biggest)
-	text(img, float64(W-pad)-measure(head, 22), pad-4, head, 22, ink3)
+	text(img, float64(W-pad)-measure(head, 22), pad-4, head, 22, txt3)
 	for i, e := range d.day {
 		if i >= 7 {
 			break
 		}
 		y := 84 + i*52
-		c := ink
-		if e.Mag >= qHot {
-			c = hot
-		}
+		c := quakeColour(e.Mag)
 		text(img, float64(x), y-4, fmt.Sprintf("%.1f", e.Mag), 38, c)
 		place := strings.ToUpper(e.Place)
-		text(img, float64(x+110), y, fit(place, 24, float64(W-pad-x-110-200)), 24, ink)
-		text(img, float64(x+110), y+28, fmt.Sprintf("DEPTH %.0f KM", e.Depth), 16, ink3)
+		text(img, float64(x+110), y, fit(place, 24, float64(W-pad-x-110-200)), 24, txt)
+		text(img, float64(x+110), y+28, fmt.Sprintf("DEPTH %.0f KM", e.Depth), 16, txt3)
 		ago := agoText(now.Sub(e.Time))
-		text(img, float64(W-pad)-measure(ago, 22), y+2, ago, 22, ink2)
+		text(img, float64(W-pad)-measure(ago, 22), y+2, ago, 22, cyan)
 	}
 	if len(d.day) == 0 {
-		text(img, float64(x), 100, "A QUIET DAY", 30, ink3)
+		text(img, float64(x), 100, "A QUIET DAY", 30, txt3)
 	}
 }
 

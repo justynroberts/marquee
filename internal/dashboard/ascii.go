@@ -59,7 +59,7 @@ func (a *ASCII) Frame(t, dt float64, now time.Time) *image.RGBA {
 	}
 	f := CameraSource(0)
 	if msg := cameraMessage(f, t); msg != "" {
-		text(a.out, (W-measure(msg, 28))/2, H/2-18, msg, 28, ink2)
+		text(a.out, (W-measure(msg, 28))/2, H/2-18, msg, 28, txt2)
 		return a.out
 	}
 	cols, rows := W/a.cellW, H/a.cellH

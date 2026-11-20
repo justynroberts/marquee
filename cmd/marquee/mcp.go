@@ -435,7 +435,7 @@ func mcpTools() []mcpTool {
 		},
 		{
 			Name: "set_playlist", Title: "Create or replace a playlist",
-			Description: "Create or replace a custom playlist, then play it by name. Items are program names: scenes (matrix, fire, plasma, clock, ...), board (one pass of the message board), news (one pass of the headline ticker), nowplaying, dashboard, interference, bigclock, worldclock, headlines, newsreel (or newsreel:bbc, newsreel:sky, newsreel:hn, ...), flights, quakes, onthisday, moon, countdown, wordclock, calendar, markets, air, weather, ascii, or media:FILE. Each non-board item plays for `seconds`.",
+			Description: "Create or replace a custom playlist, then play it by name. Items are program names: scenes (matrix, fire, plasma, clock, ...), board (one pass of the message board), news (one pass of the headline ticker), nowplaying, dashboard, interference, bigclock, worldclock, headlines, newsreel (or newsreel:bbc, newsreel:sky, newsreel:hn, ...), flights, quakes, onthisday, moon, countdown, wordclock, calendar, markets, air, trains, sun, grid, aurora, warroom, claude, claudehive, claudecity, claudeflow, claudelive, widgets, claudeclock, claudeorbit, claudeburst, claudemeter, claudelimits, claudediary, diary, commonplace, naturediary, newsdiary, progress, pomodoro, daynight, orrery, netwatch, iss, launches, rain, status, fx, weather, ascii, or media:FILE. Each non-board item plays for `seconds`.",
 			InputSchema: schema(map[string]any{
 				"name":    prop("string", "Lowercase name: letters, digits, - and _ (not a built-in program name)."),
 				"items":   map[string]any{"type": "array", "items": map[string]any{"type": "string"}, "description": "Program names in order.", "minItems": 1, "maxItems": 100},
@@ -474,6 +474,76 @@ func mcpTools() []mcpTool {
 					return nil, err
 				}
 				return []any{textContent("Deleted playlist " + a.Name + ".")}, nil
+			},
+		},
+		{
+			Name: "list_settings", Title: "List screen settings",
+			Description: "The info screens' settings: location (UK postcode or place, for weather, air, flights, sun, grid), world clock cities, newsreel source, news feeds, coins, countdown dates, bank holidays, train station, train times key (never shown), grid region. Each with its current value or the default in effect.",
+			InputSchema: empty,
+			run: func(json.RawMessage) ([]any, error) {
+				out, err := call("GET", "/v1/config", nil, "")
+				if err != nil {
+					return nil, err
+				}
+				return jsonContent(out["settings"]), nil
+			},
+		},
+		{
+			Name: "set_setting", Title: "Change a screen setting",
+			Description: "Check and save one setting by id (from list_settings). The value is checked first (a place is looked up, a feed fetched, a time zone parsed) and refused with the reason if wrong; the reply says what was understood. An empty value restores the default. Multi-line settings take newline-separated lines.",
+			InputSchema: schema(map[string]any{
+				"id":    prop("string", "Setting id: location, worldclock, newsreel, news, markets, countdown, calendar, trains, railkey, status, fx, focus, relay, grid."),
+				"value": prop("string", "The new value; empty for the default."),
+			}, "id", "value"),
+			run: func(raw json.RawMessage) ([]any, error) {
+				var a struct{ ID, Value string }
+				if err := decodeArgs(raw, &a); err != nil {
+					return nil, err
+				}
+				out, err := call("PUT", "/v1/config/"+url.PathEscape(a.ID), map[string]any{"value": a.Value}, "")
+				if err != nil {
+					return nil, err
+				}
+				return []any{textContent(fmt.Sprint("Saved ", a.ID, ": ", out["summary"]))}, nil
+			},
+		},
+		{
+			Name: "set_widget", Title: "Post a widget",
+			Description: "Put a reading on the widgets board (play \"widgets\" to show it): a label, a value large in its status colour, optional unit and a line of text. Posting the same id again replaces it. Use it to show build status, a metric, a task's progress or the result of some work.",
+			InputSchema: schema(map[string]any{
+				"id":     prop("string", "Short id, lowercase letters, digits, dot, dash or underscore (e.g. build, queue, grok)."),
+				"label":  prop("string", "Heading, up to 40 characters."),
+				"value":  prop("string", "The reading, up to 24 characters (e.g. PASS, 42, 98.2%)."),
+				"unit":   prop("string", "Optional unit shown after the value."),
+				"status": prop("string", "ok (green), warn (amber), bad (vermilion, pulses) or info."),
+				"text":   prop("string", "Optional line of detail, up to 160 characters."),
+				"ttl":    prop("number", "Seconds until it drops off the board; 0 keeps it."),
+				"flash":  prop("boolean", "Also flash it on the panel now."),
+			}, "id"),
+			run: func(raw json.RawMessage) ([]any, error) {
+				var a map[string]any
+				if err := decodeArgs(raw, &a); err != nil {
+					return nil, err
+				}
+				if _, err := call("POST", "/v1/widgets", a, ""); err != nil {
+					return nil, err
+				}
+				return []any{textContent(fmt.Sprint("Widget ", a["id"], " posted."))}, nil
+			},
+		},
+		{
+			Name: "delete_widget", Title: "Remove a widget",
+			Description: "Take a widget off the board by id, or every widget with id \"*\".",
+			InputSchema: schema(map[string]any{"id": prop("string", "Widget id, or * for all.")}, "id"),
+			run: func(raw json.RawMessage) ([]any, error) {
+				var a struct{ ID string }
+				if err := decodeArgs(raw, &a); err != nil {
+					return nil, err
+				}
+				if _, err := call("DELETE", "/v1/widgets/"+url.PathEscape(a.ID), nil, ""); err != nil {
+					return nil, err
+				}
+				return []any{textContent("Removed " + a.ID + ".")}, nil
 			},
 		},
 		{

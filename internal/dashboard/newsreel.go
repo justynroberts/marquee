@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"image"
+	"image/color"
 	"math"
 	"strings"
 	"sync"
@@ -34,9 +35,10 @@ type Newsreel struct {
 }
 
 type reelItem struct {
-	title string
-	hot   bool
-	w     int // title plus separator
+	title  string
+	hot    bool
+	colour color.RGBA // the marker after it
+	w      int        // title plus separator
 }
 
 type reelRow struct {
@@ -129,7 +131,7 @@ func (p *Newsreel) Frame(t, dt float64, now time.Time) *image.RGBA {
 		}
 		return p.cache.get("msg"+msg, func(img *image.RGBA) {
 			msg = fit(msg, 28, W-2*pad)
-			text(img, (W-measure(msg, 28))/2, H/2-18, msg, 28, ink3)
+			text(img, (W-measure(msg, 28))/2, H/2-18, msg, 28, txt3)
 		})
 	}
 	if gen != p.shown {
@@ -137,10 +139,10 @@ func (p *Newsreel) Frame(t, dt float64, now time.Time) *image.RGBA {
 		p.shown = gen
 	}
 	img := p.cache.get(fmt.Sprint(label, len(hs), now.Format("15:04")), func(img *image.RGBA) {
-		text(img, pad, pad-6, strings.ToUpper(label), 34, ink)
+		text(img, pad, pad-6, strings.ToUpper(label), 34, sourceColour(label))
 		right := fmt.Sprintf("%d STORIES   %s", len(hs), now.Format("15:04"))
-		text(img, float64(W-pad)-measure(right, 26), pad-2, right, 26, ink3)
-		rect(img, pad, 96, W-pad, 97, rule)
+		text(img, float64(W-pad)-measure(right, 26), pad-2, right, 26, txt2)
+		rect(img, pad, 96, W-pad, 97, line)
 	})
 	for i := range p.rows {
 		p.rows[i].advance()
@@ -160,7 +162,7 @@ func (p *Newsreel) load(hs []feeds.Headline) {
 			continue
 		}
 		w := int(math.Ceil(measure(title, reelPx))) + reelSep
-		lists[i%2] = append(lists[i%2], reelItem{title: title, hot: h.Points >= hlHotPts, w: w})
+		lists[i%2] = append(lists[i%2], reelItem{title: title, hot: h.Points >= hlHotPts, colour: sourceColour(h.Source), w: w})
 	}
 	if len(lists[1]) == 0 {
 		lists[1] = lists[0]
@@ -246,8 +248,8 @@ func reelTile(it reelItem) *image.RGBA {
 	fill(t, bg)
 	b := inkBox("ÁHgjy", reelPx)
 	ty := (reelRowH-b.Dy())/2 - b.Min.Y
-	text(t, 0, ty, it.title, reelPx, ink)
-	c := ink3
+	text(t, 0, ty, it.title, reelPx, txt)
+	c := it.colour
 	if it.hot {
 		c = hot
 	}

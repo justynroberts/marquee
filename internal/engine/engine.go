@@ -8,6 +8,7 @@ import (
 	"errors"
 	"fmt"
 	"image"
+	"image/draw"
 	"image/jpeg"
 	"log/slog"
 	"os"
@@ -21,6 +22,7 @@ import (
 	"github.com/justynroberts/marquee/internal/feeds"
 	"github.com/justynroberts/marquee/internal/hud"
 	"github.com/justynroberts/marquee/internal/led"
+	"github.com/justynroberts/marquee/internal/location"
 	"github.com/justynroberts/marquee/internal/nowplaying"
 	"github.com/justynroberts/marquee/internal/panel"
 	"github.com/justynroberts/marquee/internal/scenes"
@@ -165,6 +167,9 @@ type Engine struct {
 	news     []feeds.Headline // the latest fetch, for the headlines wall
 	newsAt   time.Time
 
+	wmu     sync.Mutex
+	widgets map[string]Widget // widgets.json, loaded on first use
+
 	schedMinute string
 	stop        chan struct{}
 	done        chan struct{}
@@ -187,6 +192,8 @@ func New(o Options) (*Engine, error) {
 		e.state.Brightness = 100
 	}
 	e.loadPlaylists()
+	location.SetCacheFile(filepath.Join(e.paths.Dir, "location.json"))
+	feeds.Home = e.macPlace
 	if e.state.LyricsLead != nil {
 		nowplaying.SetLead(*e.state.LyricsLead)
 	}
@@ -231,6 +238,29 @@ func (e *Engine) Programs() []ProgramInfo {
 		ProgramInfo{Name: "calendar", Group: "scene", Description: "This month and next with week numbers and UK bank holidays (area in calendar.txt)"},
 		ProgramInfo{Name: "wordclock", Group: "scene", Description: "The time spelled out in a grid of letters"},
 		ProgramInfo{Name: "countdown", Group: "scene", Description: "Days to go until the dates in countdown.txt (Christmas and New Year by default)"},
+		ProgramInfo{Name: "warroom", Group: "scene", Description: "A cold-war strategic simulation on a vector map: DEFCON rises, missiles fly, and every run ends with no winner"},
+		ProgramInfo{Name: "claude", Group: "claude", Description: "Claude Code on this Mac: today's tokens, output by hour, the last seven days, and the sessions running now with how full each is"},
+		ProgramInfo{Name: "claudelive", Group: "claude", Description: "What Claude Code is doing this moment, from its hooks: each session's current tool large, and the latest calls"},
+		ProgramInfo{Name: "widgets", Group: "news", Description: "A board of readings pushed by scripts, CI or cloud tools: POST /v1/widgets, or through the relay"},
+		ProgramInfo{Name: "claudehive", Group: "claude", Description: "Claude Code sessions as orbs: working ones spin and throw sparks into the Claude spark, idle ones doze, each ringed by how full it is"},
+		ProgramInfo{Name: "claudecity", Group: "claude", Description: "Your week with Claude Code as a city at night: a tower for every hour, as tall as its output, this hour's under a crane"},
+		ProgramInfo{Name: "claudeflow", Group: "claude", Description: "Today's Claude Code output as a river by project, sparks drifting downstream as fast as tokens arrive"},
+		ProgramInfo{Name: "claudeclock", Group: "claude", Description: "The Claude spark as a 24-hour clock: one ray an hour, as long as that hour's output, the hour now growing as tokens arrive"},
+		ProgramInfo{Name: "claudeorbit", Group: "claude", Description: "Claude Code sessions as planets orbiting the spark: size is today's output, the ring how full the conversation is"},
+		ProgramInfo{Name: "claudeburst", Group: "claude", Description: "A firework for every reply Claude writes, as big as its output, in its project's colour"},
+		ProgramInfo{Name: "claudediary", Group: "diary", Description: "Claude's diary: a quill writes how much of the plan is left, today's work, what it is doing and the week onto an old page, then the ink soaks away"},
+		ProgramInfo{Name: "commonplace", Group: "diary", Description: "A commonplace book: quotations from writers long out of copyright, copied out by quill and signed in red, then soaked away"},
+		ProgramInfo{Name: "naturediary", Group: "diary", Description: "A nature diary in quill and ink: the weather where you are, sunrise and sunset and how the days are drawing in or out, the moon, and the odd quotation"},
+		ProgramInfo{Name: "newsdiary", Group: "diary", Description: "The day's papers written up by hand: BBC and Hacker News headlines and on this day in history"},
+		ProgramInfo{Name: "diary", Group: "diary", Description: "A day book that writes itself: the weather, headlines, on this day, the moon and a little Claude, in quill and ink on an old page"},
+		ProgramInfo{Name: "claudelimits", Group: "claude", Description: "How much of your Claude plan is left: the five-hour session and the week, with reset times, a pace mark and the week by app"},
+		ProgramInfo{Name: "claudemeter", Group: "claude", Description: "Three big gauges: Claude's tokens a minute, the fullest conversation's context, and the cache hit rate"},
+		ProgramInfo{Name: "progress", Group: "scene", Description: "Time as progress bars: this hour, day, week, month, quarter and year, ticking live"},
+		ProgramInfo{Name: "pomodoro", Group: "scene", Description: "A focus (pomodoro) timer: work and break sessions with a countdown (lengths in focus.txt)"},
+		ProgramInfo{Name: "daynight", Group: "scene", Description: "The world in day and night: the terminator and twilight on a map, with your place and the world-clock cities"},
+		ProgramInfo{Name: "orrery", Group: "scene", Description: "The solar system now, seen from above: where each planet is, how far from Earth, and which are in the evening sky"},
+		ProgramInfo{Name: "netwatch", Group: "scene", Description: "Internet health: latency and loss to your router, Cloudflare and Google DNS, and DNS lookup time"},
+		ProgramInfo{Name: "sun", Group: "scene", Description: "Today's daylight where you are: the sun's path, dawn, sunrise, sunset, dusk and how the day is changing"},
 		ProgramInfo{Name: "moon", Group: "scene", Description: "Tonight's moon: its phase drawn large, the next full and new moons, the coming 30 nights"},
 		ProgramInfo{Name: "worldclock", Group: "scene", Description: "Clocks for several cities with day/night strips (cities in world-clock.txt)"},
 		ProgramInfo{Name: "headlines", Group: "news", Description: "A news wall: every headline in small type, four slowly scrolling columns (native resolution)"},
@@ -238,6 +268,14 @@ func (e *Engine) Programs() []ProgramInfo {
 		ProgramInfo{Name: "quakes", Group: "news", Description: "Earthquakes worldwide in the last day and week on a map, from the USGS"},
 		ProgramInfo{Name: "onthisday", Group: "news", Description: "On this day in history, from Wikipedia, one event at a time"},
 		ProgramInfo{Name: "markets", Group: "news", Description: "Crypto prices from CoinGecko with the day's move and seven days (coins in markets.txt)"},
+		ProgramInfo{Name: "grid", Group: "news", Description: "The electricity grid where you are: carbon per kWh, the generation mix, 48 hours ahead and the greenest time (GB)"},
+		ProgramInfo{Name: "iss", Group: "news", Description: "Where the International Space Station is now: its ground track on a map, height, speed and distance from you"},
+		ProgramInfo{Name: "launches", Group: "news", Description: "Rocket launches coming up worldwide, with a live countdown to the next, from Launch Library"},
+		ProgramInfo{Name: "rain", Group: "news", Description: "Will it rain? Rain for the next two hours in 15-minute steps, and the next 12 hours (place in weather.txt)"},
+		ProgramInfo{Name: "status", Group: "news", Description: "Are the services you rely on up? Status pages for GitHub, Cloudflare, Anthropic and more (list in status.txt)"},
+		ProgramInfo{Name: "fx", Group: "news", Description: "Exchange rates with the day's move and 30 days, from the ECB via Frankfurter (currencies in fx.txt)"},
+		ProgramInfo{Name: "aurora", Group: "news", Description: "Will you see the northern lights? AuroraWatch UK's alert level and NOAA's Kp forecast"},
+		ProgramInfo{Name: "trains", Group: "news", Description: "Live departures and arrivals for a station from National Rail (station in trains.txt; needs a free Rail Data Marketplace key)"},
 		ProgramInfo{Name: "air", Group: "news", Description: "Air quality and pollen for the weather place, now and the next 48 hours"},
 		ProgramInfo{Name: "newsreel", Group: "news", Description: "One news source crawling across the panel in mid-size type (source in newsreel.txt)"},
 		ProgramInfo{Name: "weather", Group: "scene", Description: "Weather now, the next 24 hours and the coming days (place in weather.txt)"},
@@ -317,6 +355,69 @@ func (e *Engine) makeScene(name string, seconds float64) (Program, error) {
 		return &fullRes{name: name, v: dashboard.NewCalendar(e.calendarArea), seconds: seconds}, nil
 	case "air":
 		return &fullRes{name: name, v: dashboard.NewAirQuality(e.weatherPlace), seconds: seconds}, nil
+	case "warroom":
+		return &fullRes{name: name, v: dashboard.NewWarRoom(), seconds: seconds}, nil
+	case "sun":
+		return &fullRes{name: name, v: dashboard.NewSun(e.weatherPlace), seconds: seconds}, nil
+	case "claude":
+		return &fullRes{name: name, v: dashboard.NewClaudeCode(), seconds: seconds}, nil
+	case "claudelive":
+		return &fullRes{name: name, v: dashboard.NewClaudeLive(), seconds: seconds}, nil
+	case "widgets":
+		return &fullRes{name: name, v: dashboard.NewWidgets(e.widgetViews), seconds: seconds}, nil
+	case "claudehive":
+		return &fullRes{name: name, v: dashboard.NewClaudeHive(), seconds: seconds}, nil
+	case "claudecity":
+		return &fullRes{name: name, v: dashboard.NewClaudeCity(), seconds: seconds}, nil
+	case "claudeflow":
+		return &fullRes{name: name, v: dashboard.NewClaudeFlow(), seconds: seconds}, nil
+	case "claudeclock":
+		return &fullRes{name: name, v: dashboard.NewClaudeClock(), seconds: seconds}, nil
+	case "claudeorbit":
+		return &fullRes{name: name, v: dashboard.NewClaudeOrbit(), seconds: seconds}, nil
+	case "claudeburst":
+		return &fullRes{name: name, v: dashboard.NewClaudeBurst(), seconds: seconds}, nil
+	case "diary":
+		return &fullRes{name: name, v: dashboard.NewDiary(e.weatherPlace), seconds: seconds}, nil
+	case "commonplace", "naturediary", "newsdiary":
+		book := map[string]string{"commonplace": "quotes", "naturediary": "nature", "newsdiary": "papers"}[name]
+		return &fullRes{name: name, v: dashboard.NewDiaryBook(book, e.weatherPlace), seconds: seconds}, nil
+	case "claudediary":
+		return &fullRes{name: name, v: dashboard.NewClaudeDiary(), seconds: seconds}, nil
+	case "claudelimits":
+		return &fullRes{name: name, v: dashboard.NewClaudeLimits(), seconds: seconds}, nil
+	case "claudemeter":
+		return &fullRes{name: name, v: dashboard.NewClaudeMeter(), seconds: seconds}, nil
+	case "progress":
+		return &fullRes{name: name, v: dashboard.NewProgress(), seconds: seconds}, nil
+	case "pomodoro":
+		path := filepath.Join(e.paths.Dir, "focus.txt")
+		return &fullRes{name: name, v: dashboard.NewFocus(func() dashboard.FocusConfig { return dashboard.LoadFocus(path) }), seconds: seconds}, nil
+	case "daynight":
+		zpath := filepath.Join(e.paths.Dir, "world-clock.txt")
+		return &fullRes{name: name, v: dashboard.NewDayNight(e.weatherPlace, func() []dashboard.Zone { return dashboard.LoadZones(zpath) }), seconds: seconds}, nil
+	case "orrery":
+		return &fullRes{name: name, v: dashboard.NewOrrery(), seconds: seconds}, nil
+	case "netwatch":
+		return &fullRes{name: name, v: dashboard.NewNetWatch(), seconds: seconds}, nil
+	case "iss":
+		return &fullRes{name: name, v: dashboard.NewISS(e.weatherPlace), seconds: seconds}, nil
+	case "launches":
+		return &fullRes{name: name, v: dashboard.NewLaunches(), seconds: seconds}, nil
+	case "rain":
+		return &fullRes{name: name, v: dashboard.NewRain(e.weatherPlace), seconds: seconds}, nil
+	case "status":
+		path := filepath.Join(e.paths.Dir, "status.txt")
+		return &fullRes{name: name, v: dashboard.NewStatus(func() []feeds.StatusPage { return dashboard.LoadStatus(path) }), seconds: seconds}, nil
+	case "fx":
+		path := filepath.Join(e.paths.Dir, "fx.txt")
+		return &fullRes{name: name, v: dashboard.NewFX(func() dashboard.FXConfig { return dashboard.LoadFX(path) }), seconds: seconds}, nil
+	case "grid":
+		return &fullRes{name: name, v: dashboard.NewGridPower(e.gridOutcode), seconds: seconds}, nil
+	case "aurora":
+		return &fullRes{name: name, v: dashboard.NewAurora(), seconds: seconds}, nil
+	case "trains":
+		return &fullRes{name: name, v: dashboard.NewTrains(e.trainStation, e.trainToken), seconds: seconds}, nil
 	case "wordclock":
 		return &fullRes{name: name, v: dashboard.NewWordClock(), seconds: seconds}, nil
 	case "countdown":
@@ -581,6 +682,7 @@ func (e *Engine) Run() {
 	e.usb = make(chan []byte, 1)
 	usbDone := make(chan struct{})
 	go e.usbLoop(usbDone)
+	go e.relayLoop()
 	defer func() { close(e.usb); <-usbDone }()
 	count, window := 0, time.Now()
 	last := time.Now()
@@ -671,10 +773,14 @@ func (e *Engine) setError(s string) {
 	}
 }
 
-// updatePreview records the frame; it is only JPEG-encoded when someone asks for the preview.
+// updatePreview records a copy of the frame (programs draw the next frame into the same
+// buffer, so keeping the pointer would tear); it is only JPEG-encoded when someone asks.
 func (e *Engine) updatePreview(img *image.RGBA) {
 	e.previewMu.Lock()
-	e.lastFrame = img
+	if e.lastFrame == nil || e.lastFrame.Bounds() != img.Bounds() {
+		e.lastFrame = image.NewRGBA(img.Bounds())
+	}
+	draw.Draw(e.lastFrame, img.Bounds(), img, img.Bounds().Min, draw.Src)
 	e.frameSeq++
 	e.previewMu.Unlock()
 }

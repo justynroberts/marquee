@@ -128,7 +128,7 @@ func (f *Flights) Frame(t, dt float64, now time.Time) *image.RGBA {
 	a0 := math.Mod(t/4, 1) * 2 * math.Pi
 	for i := 0; i < 12; i++ {
 		a := a0 - float64(i)*0.03
-		c := mix(bg, ink3, 1-float64(i)/12)
+		c := mix(bg, green, (1-float64(i)/12)*0.7)
 		wideLine(img, flCX, flCY, flCX+int(flR*math.Sin(a)), flCY-int(flR*math.Cos(a)), c, 2)
 	}
 	// aircraft, on top of the sweep; nearest first get labels, skipping any that would overlap
@@ -139,13 +139,7 @@ func (f *Flights) Frame(t, dt float64, now time.Time) *image.RGBA {
 		}
 		sx := float64(flCX) + p.x/rng*flR
 		sy := float64(flCY) - p.y/rng*flR
-		c := ink
-		if p.Ground {
-			c = ink3
-		}
-		if p.Emergency {
-			c = hot
-		}
+		c := altColour(p.Aircraft)
 		tr := p.Track * math.Pi / 180
 		wideLine(img, int(sx), int(sy), int(sx+16*math.Sin(tr)), int(sy-16*math.Cos(tr)), c, 2)
 		disc(img, sx, sy, 4.5, c)
@@ -159,26 +153,44 @@ func (f *Flights) Frame(t, dt float64, now time.Time) *image.RGBA {
 		}
 		if free {
 			taken = append(taken, lb)
-			text(img, sx+9, int(sy)+4, p.Callsign, 16, ink2)
+			text(img, sx+9, int(sy)+4, p.Callsign, 16, txt)
 		}
 	}
 	return img
 }
 
+// altColour runs green near the ground through cyan to violet at cruising height; an
+// emergency is vermilion.
+func altColour(a feeds.Aircraft) color.RGBA {
+	switch {
+	case a.Emergency:
+		return hot
+	case a.Ground:
+		return txt3
+	}
+	k := math.Min(1, float64(a.Alt)/38000)
+	if k < 0.5 {
+		return mix(green, cyan, k*2)
+	}
+	return mix(cyan, violet, (k-0.5)*2)
+}
+
+var radarRing = color.RGBA{38, 84, 52, 255}
+
 func (f *Flights) render(img *image.RGBA, home feeds.Place, ps []plane, rng float64) {
 	// radar rings, cross and north
 	for r := 1; r <= 4; r++ {
-		ring(img, flCX, flCY, float64(flR*r)/4, rule)
+		ring(img, flCX, flCY, float64(flR*r)/4, radarRing)
 	}
-	rect(img, flCX-flR, flCY, flCX+flR, flCY, rule)
-	rect(img, flCX, flCY-flR, flCX, flCY+flR, rule)
-	text(img, flCX-measure("N", 18)/2, flCY-flR-26, "N", 18, ink3)
+	rect(img, flCX-flR, flCY, flCX+flR, flCY, radarRing)
+	rect(img, flCX, flCY-flR, flCX, flCY+flR, radarRing)
+	text(img, flCX-measure("N", 18)/2, flCY-flR-26, "N", 18, txt3)
 	lbl := fmt.Sprintf("%.0fNM", rng)
-	text(img, flCX+flR+6, flCY+4, lbl, 16, ink3)
-	disc(img, flCX, flCY, 3, ink2)
+	text(img, flCX+flR+6, flCY+4, lbl, 16, txt3)
+	disc(img, flCX, flCY, 3, txt2)
 
 	x := flTab
-	caps(img, x, pad-4, fmt.Sprintf("overhead  %s  within %d nm", home.Name, flRange), 900)
+	head(img, x, pad-4, fmt.Sprintf("overhead  %s  within %d nm", home.Name, flRange), 900)
 	var air []plane
 	for _, p := range ps {
 		if !p.Ground {
@@ -189,7 +201,7 @@ func (f *Flights) render(img *image.RGBA, home feeds.Place, ps []plane, rng floa
 	if len(air) < len(ps) {
 		n += fmt.Sprintf("   %d ON THE GROUND", len(ps)-len(air))
 	}
-	text(img, float64(W-pad)-measure(n, 22), pad-4, n, 22, ink3)
+	text(img, float64(W-pad)-measure(n, 22), pad-4, n, 22, txt3)
 	cols := []struct {
 		name  string
 		right int // right edge, or 0 for left-aligned at at
@@ -198,25 +210,26 @@ func (f *Flights) render(img *image.RGBA, home feeds.Place, ps []plane, rng floa
 	hy := 84
 	for _, c := range cols {
 		if c.right > 0 {
-			text(img, float64(x+c.right)-measure(c.name, 18), hy, c.name, 18, ink3)
+			text(img, float64(x+c.right)-measure(c.name, 18), hy, c.name, 18, txt3)
 		} else {
-			text(img, float64(x+c.at), hy, c.name, 18, ink3)
+			text(img, float64(x+c.at), hy, c.name, 18, txt3)
 		}
 	}
 	barX := x + 1140
-	text(img, float64(barX), hy, "ALTITUDE", 18, ink3)
-	rect(img, x, hy+30, W-pad, hy+30, rule)
+	text(img, float64(barX), hy, "ALTITUDE", 18, txt3)
+	rect(img, x, hy+30, W-pad, hy+30, line)
 	if len(air) == 0 {
-		text(img, float64(x), hy+60, "CLEAR SKIES: NOTHING IN RANGE", 26, ink3)
+		text(img, float64(x), hy+60, "CLEAR SKIES: NOTHING IN RANGE", 26, txt3)
 	}
 	for i, p := range air {
 		if i >= 8 {
 			break
 		}
 		y := hy + 50 + i*38
-		c := ink
+		ac := altColour(p.Aircraft)
+		colours := []color.RGBA{cyan, txt2, txt3, ac, txt, amber, txt2}
 		if p.Emergency {
-			c = hot
+			colours = []color.RGBA{hot, hot, hot, hot, hot, hot, hot}
 		}
 		alt := fmt.Sprintf("%d", p.Alt)
 		if p.Ground {
@@ -227,9 +240,9 @@ func (f *Flights) render(img *image.RGBA, home feeds.Place, ps []plane, rng floa
 			cl := cols[j]
 			s = strings.ToUpper(s)
 			if cl.right > 0 {
-				text(img, float64(x+cl.right)-measure(s, 26), y, s, 26, c)
+				text(img, float64(x+cl.right)-measure(s, 26), y, s, 26, colours[j])
 			} else {
-				text(img, float64(x+cl.at), y, fit(s, 26, 200), 26, c)
+				text(img, float64(x+cl.at), y, fit(s, 26, 200), 26, colours[j])
 			}
 		}
 		if p.Emergency {
@@ -237,9 +250,9 @@ func (f *Flights) render(img *image.RGBA, home feeds.Place, ps []plane, rng floa
 			continue
 		}
 		bw := W - pad - barX
-		rect(img, barX, y+10, barX+bw, y+12, rule)
+		rect(img, barX, y+10, barX+bw, y+12, line)
 		if !p.Ground {
-			rect(img, barX, y+8, barX+int(float64(bw)*math.Min(1, float64(p.Alt)/45000)), y+14, ink3)
+			rect(img, barX, y+8, barX+int(float64(bw)*math.Min(1, float64(p.Alt)/45000)), y+14, ac)
 		}
 	}
 }

@@ -27,6 +27,7 @@ client and the MCP server.
 | `internal/hud` | The HUD screen and the `Mirrored` transform |
 | `internal/feeds` | Weather (Open-Meteo), PagerDuty, Hacker News and RSS/Atom; registers board tokens |
 | `internal/camera` | Webcam capture through AVFoundation (`camera_darwin.m`): the capture queue box-filters each frame to 320 px wide, mirrored RGB, and runs Vision person segmentation and hand pose only when a scene asks (`LatestWith`); opened on first use off the render loop, released after 10 s idle |
+| `internal/location` | This Mac's position through Core Location (`location_darwin.m`): one coarse fix requested on the main queue when a screen first needs it and every three hours, named by `CLGeocoder`, cached in `location.json`; `Fix.Place()` is the `@lat,lon\|Name` string `feeds.Geocode` reads without a lookup |
 | `internal/audio` | Microphone capture (`malgo`, i.e. miniaudio), FFT, bands, beats and levels |
 | `internal/panel` | Supported models, handshake, frame protocol, JPEG encoding, 180° rotation, pacing |
 | `internal/usb` | Minimal cgo libusb binding: open by VID/PID, claim, bulk transfer, reset |
@@ -89,7 +90,11 @@ and its output is meant to be identical pixel for pixel:
   Pillow uses it, and layout follows `ImageDraw.text`: hinted glyphs, greyscale anti-aliasing,
   integer pen positions, the `la` anchor. The `pixel` font reproduces Pillow's built-in bitmap
   font. Without the system fonts, `led` falls back to the embedded Go fonts so a bare binary still
-  renders text.
+  renders text. The full-resolution screens pick a system face per program (`programFonts` in
+  `internal/dashboard/dashboard.go`); the diary screens use two embedded handwriting fonts
+  (`internal/dashboard/fonts/`, Homemade Apple under Apache 2.0 and Meddon under the SIL OFL, with
+  their licences), which `fonts.go` writes to `~/Library/Caches/Marquee/fonts` once because
+  FreeType opens fonts by path.
 - **Emoji** are read from the 160 ppem bitmap strike of the Mac's own Apple Color Emoji, drawn on
   a transparent canvas, cropped to their ink and Lanczos-resized, as the Python board did.
 - **Resampling** (`internal/pil`) and **line drawing** (`internal/dashboard/pilline.go`) are ports
@@ -125,7 +130,7 @@ Other opt-in variables for looking at output by eye or hitting real services:
 |---|---|
 | `HUD_PNG=DIR` | `internal/hud` tests write each HUD case as a PNG |
 | `NOWPLAYING_PNG=/path/out.png` | `internal/nowplaying` writes sample Now Playing and lyrics frames |
-| `HIRES_PNG=DIR` | `internal/dashboard` writes `bigclock`, `worldclock`, `headlines`, `newsreel`, `flights`, `quakes`, `onthisday`, `moon`, `countdown`, `wordclock`, `calendar`, `markets`, `air`, `weather` and `ascii` frames |
+| `HIRES_PNG=DIR` | `internal/dashboard` writes `bigclock`, `worldclock`, `headlines`, `newsreel`, `flights`, `quakes`, `onthisday`, `moon`, `countdown`, `wordclock`, `calendar`, `markets`, `air`, `trains`, `weather` and `ascii` frames, `sun`, `grid`, `aurora`, and the newer screens' tests (`maps_test.go`, `online_test.go`, `tools_test.go`) write theirs too |
 | `CAMERA_REAL=DIR` | `internal/scenes` `TestCameraReal` opens the real camera and writes a PNG per camera scene |
 | `NOWPLAYING_REAL=1` | `internal/nowplaying` tests talk to the real Music/Spotify and LRCLIB |
 

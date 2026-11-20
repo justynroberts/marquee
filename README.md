@@ -25,6 +25,7 @@ macOS asks for permissions the first time a feature needs them:
 | Microphone | an audio visualiser first plays | The visualisers analyse live sound. Nothing is recorded or sent anywhere. The microphone is released 10 seconds after the last visualiser stops. |
 | Camera | a camera scene first plays | The camera scenes draw the webcam on the panel. Nothing is recorded or sent anywhere. The camera is released 10 seconds after the last camera scene stops. |
 | Automation (Music, Spotify) | `nowplaying`, `karaoke` or the HUD first looks for a track | Marquee asks Music and Spotify what is playing. It never changes anything in them, and never launches a player that is not running. |
+| Location | `weather`, `flights`, `air`, `sun` or `grid` first plays without a place in `weather.txt` | Shows the weather, air, aircraft, daylight and grid where you are. Marquee asks for an approximate fix and rounds it to about a kilometre before sending it to Open-Meteo, adsb.lol or postcodes.io; `grid` sends only the postcode district (e.g. SW1A). |
 | Local Network | you turn on **Allow Other Devices** | Other devices can then reach the panel, and Marquee advertises itself over Bonjour. |
 
 If you said no by mistake, see [Troubleshooting](docs/GUIDE.md#troubleshooting).
@@ -73,6 +74,36 @@ keys). Logs go to `~/Library/Logs/Marquee/marquee.log`.
 - **Moon** (`moon`): tonight's phase drawn large, the next full and new moons, the coming month.
 - **Word clock** (`wordclock`) and **calendar** (`calendar`, with UK bank holidays).
 - **Markets** (`markets`): crypto prices from CoinGecko with the day's move and the week.
+- **War room** (`warroom`): a cold-war strategic simulation on a vector map that always ends the
+  same way, with no winner.
+- **Claude Code** (`claude`): today's tokens by kind, output by the hour, the last seven days,
+  and the sessions running now with how full each conversation is, read from Claude Code's own
+  history on this Mac. Three playful versions of the same: `claudehive` (each session an orb
+  throwing sparks into the Claude spark), `claudecity` (your week as a skyline, a tower an hour)
+  and `claudeflow` (today's output as a river by project); and large ones: `claudeclock` (the
+  spark as a 24-hour clock), `claudeorbit` (sessions as planets), `claudeburst` (a firework per
+  reply) `claudemeter` (three big gauges) `claudelimits` (how much of your Pro or Max plan is left) and `claudediary` (a quill writes Claude's diary on an old page, then the ink soaks away). `diary` is the same page as a day book of weather, headlines, history, daylight, the moon and quotations, and `commonplace`, `naturediary` and `newsdiary` are narrower books on the same page.
+- **Widgets** (`widgets`): a board of readings anything can post (`POST /v1/widgets`), and an
+  ntfy relay so cloud tools such as Grok Bot can post too.
+- **Live Claude** (`claudelive`): what each Claude Code session is doing this moment, from a
+  hook (`scripts/claude-hook.sh`).
+- **Desk tools**: `progress` (the hour, day, week, month and year as live progress bars),
+  `pomodoro` (a focus timer, lengths in `focus.txt`), `netwatch` (latency and loss to your
+  router, Cloudflare and Google, and DNS time) and `status` (status pages for GitHub,
+  Cloudflare, Anthropic and others, list in `status.txt`).
+- **Rain** (`rain`): will it rain in the next two hours, in 15-minute steps, and the next 12.
+- **Space**: `iss` (the space station's ground track, height, speed and distance from you),
+  `launches` (rocket launches with a live countdown), `orrery` (the planets now, from above)
+  and `daynight` (the day/night terminator on a world map, with the world-clock cities).
+- **Exchange rates** (`fx`): currencies against your base with the day's move and 30 days.
+- **Settings** (menu → **Settings…**): one page for your location, cities, feeds, coins, dates,
+  station and keys, each checked as you save it.
+- **Trains** (`trains`): live departures and arrivals for a station (Long Eaton by default) from
+  National Rail, with a free [Rail Data Marketplace](https://raildata.org.uk) key.
+- **Sun** (`sun`), **grid** (`grid`: carbon intensity and generation mix where you are) and
+  **aurora** (`aurora`: AuroraWatch UK and NOAA's Kp forecast).
+- **Neon** and **clones** (`neon`, `clones`): you as glowing outlines, or trailed by delayed
+  copies in colour.
 - **Air quality** (`air`): AQI, pollutants and pollen for the weather place, and the next 48 hours.
 - **Flock** (`flock`): a murmuration of birds wheeling across the LED grid.
 - **Countdown** (`countdown`): days to go until the dates in `countdown.txt`.
@@ -198,5 +229,9 @@ from the system on macOS; [Twemoji](https://github.com/jdecked/twemoji) (CC-BY 4
 Weather from [Open-Meteo](https://open-meteo.com); lyrics from [LRCLIB](https://lrclib.net);
 aircraft from [adsb.lol](https://adsb.lol) (ODbL); earthquakes from the USGS; "on this day" from
 Wikipedia (CC BY-SA); prices from CoinGecko; air quality from Open-Meteo (CAMS); bank holidays
-from gov.uk (OGL). The
+from gov.uk (OGL); carbon intensity from NESO; aurora from AuroraWatch UK
+(Lancaster University) and NOAA SWPC; the ISS position from wheretheiss.at; launches from
+The Space Devs' Launch Library 2; exchange rates from the ECB via Frankfurter; service status
+from each service's public status page; postcode districts from postcodes.io; train times from National Rail
+(Darwin, via the Rail Data Marketplace). The
 licence texts ship in `Marquee.app/Contents/Resources`.

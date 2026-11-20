@@ -50,7 +50,7 @@ func TestAllScenes(t *testing.T) {
 	for _, s := range []string{"mirror", "waterfall", "scope", "pulse", "meter", "spectrum"} {
 		want[s] = "audio"
 	}
-	for _, s := range []string{"camera", "popart", "motion", "slitscan", "snowfall", "bubbles", "airpaint", "thermal", "kaleido"} {
+	for _, s := range []string{"camera", "popart", "motion", "slitscan", "snowfall", "bubbles", "airpaint", "thermal", "kaleido", "neon", "clones"} {
 		want[s] = "camera"
 	}
 	for name, group := range want {

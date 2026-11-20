@@ -57,6 +57,6 @@ func waitMessage(c *frameCache, what string, err error) *image.RGBA {
 	}
 	return c.get("msg"+msg, func(img *image.RGBA) {
 		msg = fit(msg, 28, W-2*pad)
-		text(img, (W-measure(msg, 28))/2, H/2-18, msg, 28, ink3)
+		text(img, (W-measure(msg, 28))/2, H/2-18, msg, 28, txt3)
 	})
 }

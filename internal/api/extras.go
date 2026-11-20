@@ -1,15 +1,18 @@
 package api
 
 import (
+	"bytes"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
 	"net/http"
 	"os"
+	"path/filepath"
 	"strings"
 
 	"github.com/justynroberts/marquee/internal/engine"
+	"github.com/justynroberts/marquee/internal/feeds"
 	"github.com/justynroberts/marquee/internal/led"
 	"github.com/justynroberts/marquee/internal/nowplaying"
 )
@@ -347,4 +350,107 @@ func (s *Server) updateCheck(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	writeJSON(w, 200, s.Update(r.URL.Query().Get("check") != ""))
+}
+
+// listConfig lists the screens' settings (the text files in the data folder). Secrets are
+// never returned, only whether they are set.
+func (s *Server) listConfig(w http.ResponseWriter, r *http.Request) {
+	writeJSON(w, 200, map[string]any{"settings": s.E.Settings()})
+}
+
+// putConfig checks and saves one setting: {"value": "..."}; an empty value restores the
+// default. The reply says what Marquee made of it.
+func (s *Server) putConfig(w http.ResponseWriter, r *http.Request) {
+	var body struct {
+		Value *string `json:"value"`
+	}
+	if err := readJSON(r, &body); err != nil || body.Value == nil {
+		fail(w, 400, "send {\"value\": \"...\"}")
+		return
+	}
+	summary, err := s.E.SetSetting(r.PathValue("id"), *body.Value)
+	switch {
+	case errors.Is(err, engine.ErrUnknownSetting):
+		fail(w, 404, err.Error())
+	case err != nil:
+		fail(w, 422, err.Error())
+	default:
+		writeJSON(w, 200, map[string]any{"ok": true, "summary": summary})
+	}
+}
+
+// ---------------------------------------------------------------- widgets
+
+func (s *Server) listWidgets(w http.ResponseWriter, r *http.Request) {
+	writeJSON(w, 200, map[string]any{"widgets": s.E.Widgets()})
+}
+
+// postWidgets takes one widget or a list of them.
+func (s *Server) postWidgets(w http.ResponseWriter, r *http.Request) {
+	var raw json.RawMessage
+	if err := readJSON(r, &raw); err != nil {
+		fail(w, 400, err.Error())
+		return
+	}
+	var ws []engine.Widget
+	if t := bytes.TrimSpace(raw); len(t) > 0 && t[0] == '[' {
+		if err := json.Unmarshal(t, &ws); err != nil {
+			fail(w, 400, err.Error())
+			return
+		}
+	} else {
+		var one engine.Widget
+		if err := json.Unmarshal(raw, &one); err != nil {
+			fail(w, 400, err.Error())
+			return
+		}
+		ws = []engine.Widget{one}
+	}
+	var saved []engine.Widget
+	for _, x := range ws {
+		got, err := s.E.SetWidget(x)
+		if err != nil {
+			fail(w, 422, err.Error())
+			return
+		}
+		saved = append(saved, got)
+	}
+	writeJSON(w, 200, map[string]any{"ok": true, "widgets": saved})
+}
+
+func (s *Server) deleteWidget(w http.ResponseWriter, r *http.Request) {
+	if err := s.E.DeleteWidget(r.PathValue("id")); err != nil {
+		fail(w, 404, err.Error())
+		return
+	}
+	writeJSON(w, 200, map[string]any{"ok": true})
+}
+
+// claudeActivity takes reports from Claude Code's hooks (scripts/claude-hook.sh).
+func (s *Server) claudeActivity(w http.ResponseWriter, r *http.Request) {
+	var b struct {
+		Session, Cwd, Project, Event, Tool, Detail string
+	}
+	if err := readJSON(r, &b); err != nil {
+		fail(w, 400, err.Error())
+		return
+	}
+	switch b.Event {
+	case "tool", "done", "prompt", "stop":
+	default:
+		fail(w, 400, "event is tool, done, prompt or stop")
+		return
+	}
+	if b.Project == "" && b.Cwd != "" {
+		b.Project = filepath.Base(b.Cwd)
+	}
+	cut := func(s string, n int) string {
+		if r := []rune(strings.TrimSpace(s)); len(r) > n {
+			return string(r[:n])
+		}
+		return strings.TrimSpace(s)
+	}
+	feeds.Activity.Add(feeds.ClaudeEvent{Session: cut(b.Session, 64), Project: cut(b.Project, 60), Kind: b.Event,
+		Tool: cut(b.Tool, 40), Detail: cut(strings.ReplaceAll(b.Detail, "\n", " "), 120)})
+	writeJSON(w, 200, map[string]any{"ok": true})
 }

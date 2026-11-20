@@ -79,6 +79,8 @@ dns-sd -B _marquee._tcp
 | `POST /v1/lyrics` | Lyric timing |
 | `GET /v1/playlists`, `PUT /v1/playlists/{name}`, `DELETE /v1/playlists/{name}` | Playlists |
 | `POST /v1/news/refresh` | Fetch headlines now |
+| `GET /v1/widgets`, `POST /v1/widgets`, `DELETE /v1/widgets/{id}` | The widgets board |
+| `POST /v1/claude/activity` | Claude Code hook reports (local only) |
 | `POST /v1/webhook` | Generic webhook |
 | `POST /v1/webhook/github` | GitHub webhook |
 | `GET /v1/preview.jpg` | The frame on the panel now |
@@ -87,6 +89,7 @@ dns-sd -B _marquee._tcp
 | `GET /v1/update` | Update check against GitHub Releases |
 | `GET /v1/keys`, `POST /v1/keys`, `DELETE /v1/keys/{id}` | API keys (local only) |
 | `GET /v1/settings`, `PUT /v1/settings` | App settings (local only) |
+| `GET /v1/config`, `PUT /v1/config/{id}` | The info screens' settings (local only) |
 | `GET /v1/openapi.json` | OpenAPI description (public) |
 
 ---
@@ -181,7 +184,8 @@ curl $M/v1/programs
 ```
 
 Groups are `playlist` (built-in, custom and `showcase`), `panel` (`board`, `draw`, `news`, `hud`),
-`scene`, `audio` and `media`.
+`news` (news and info screens), `claude` (the Claude Code screens), `diary` (`claudediary`, `diary`, `commonplace`, `naturediary` and `newsdiary`, the handwritten pages), `scene`, `audio`, `camera` and
+`media`.
 
 ### GET /v1/fonts
 
@@ -205,7 +209,7 @@ curl $M/v1/fonts
 
 | Field | Type | |
 |---|---|---|
-| `program` | string, required | A name from `/v1/programs`: a playlist, `showcase`, `board`, `draw`, `news`, `hud`, a scene, an audio visualiser, `nowplaying`, `karaoke`, `dashboard`, `interference`, `bigclock`, `worldclock`, `headlines`, `newsreel`, `newsreel:NAME`, `flights`, `quakes`, `onthisday`, `moon`, `countdown`, `wordclock`, `calendar`, `markets`, `air`, `weather`, `ascii` or `media:FILE` |
+| `program` | string, required | A name from `/v1/programs`: a playlist, `showcase`, `board`, `draw`, `news`, `hud`, a scene, an audio visualiser, `nowplaying`, `karaoke`, `dashboard`, `interference`, `bigclock`, `worldclock`, `headlines`, `newsreel`, `newsreel:NAME`, `flights`, `quakes`, `onthisday`, `moon`, `countdown`, `wordclock`, `calendar`, `markets`, `air`, `trains`, `sun`, `grid`, `aurora`, `warroom`, `claude`, `claudehive`, `claudecity`, `claudeflow`, `claudeclock`, `claudeorbit`, `claudeburst`, `claudemeter`, `claudelimits`, `claudediary`, `diary`, `commonplace`, `naturediary`, `newsdiary`, `progress`, `pomodoro`, `netwatch`, `daynight`, `orrery`, `iss`, `launches`, `rain`, `status`, `fx`, `weather`, `ascii` or `media:FILE` |
 
 ```bash
 curl -X POST $M/v1/play -H 'Content-Type: application/json' -d '{"program":"matrix"}'
@@ -573,7 +577,7 @@ Creates or replaces a custom playlist, saved in `playlists.json`.
 
 | Field | Type | |
 |---|---|---|
-| `items` | array of strings, required | 1–100 program names: scenes, audio visualisers, `board`, `news`, `nowplaying`, `karaoke`, `dashboard`, `interference`, `bigclock`, `worldclock`, `headlines`, `newsreel`, `newsreel:NAME`, `flights`, `quakes`, `onthisday`, `moon`, `countdown`, `wordclock`, `calendar`, `markets`, `air`, `weather`, `ascii`, `hud`, `media:FILE` |
+| `items` | array of strings, required | 1–100 program names: scenes, audio visualisers, `board`, `news`, `nowplaying`, `karaoke`, `dashboard`, `interference`, `bigclock`, `worldclock`, `headlines`, `newsreel`, `newsreel:NAME`, `flights`, `quakes`, `onthisday`, `moon`, `countdown`, `wordclock`, `calendar`, `markets`, `air`, `trains`, `sun`, `grid`, `aurora`, `warroom`, `claude`, `claudehive`, `claudecity`, `claudeflow`, `claudeclock`, `claudeorbit`, `claudeburst`, `claudemeter`, `claudelimits`, `claudediary`, `diary`, `commonplace`, `naturediary`, `newsdiary`, `progress`, `pomodoro`, `netwatch`, `daynight`, `orrery`, `iss`, `launches`, `rain`, `status`, `fx`, `weather`, `ascii`, `hud`, `media:FILE` |
 | `seconds` | number | Seconds per item, 0–3600; 0 or missing uses the default (20) |
 
 `board` and `news` items run for one full scroll rather than `seconds`. Names are lowercase
@@ -623,6 +627,53 @@ curl -X POST $M/v1/news/refresh
 `502` if no source could be fetched.
 
 ---
+
+## Widgets
+
+The `widgets` screen is a board of readings that anything can post: a label, a value large in
+its status colour, an optional unit and a line of text. Posting the same `id` again replaces the
+reading. The board holds 24 and is kept in `widgets.json`.
+
+### POST /v1/widgets
+
+One widget, or a list of them:
+
+| Field | Type | |
+|---|---|---|
+| `id` | string | 1–40 lowercase letters, digits, `.`, `-`, `_` (made from `label` if left out) |
+| `label` | string | Heading, up to 40 characters |
+| `value` | string | The reading, up to 24 characters |
+| `unit` | string | Shown small after the value |
+| `status` | string | `ok` (green), `warn` (amber), `bad` (vermilion, pulses) or `info`; `pass`, `fail`, `degraded` and similar are understood |
+| `text` | string | A line of detail, up to 160 characters |
+| `ttl` | number | Seconds until it drops off the board; 0 keeps it |
+| `flash` | boolean | Also flash it on the panel now |
+
+A widget needs a `value` or `text`. The reply is `{"ok": true, "widgets": [...]}`; a widget that
+cannot be stored is a 422 with the reason.
+
+```bash
+curl -d '{"id":"build","label":"CI","value":"PASS","status":"ok","text":"312 tests"}' localhost:7781/v1/widgets
+```
+
+`GET /v1/widgets` returns `{"widgets": [...]}`; `DELETE /v1/widgets/{id}` removes one (`*` for all).
+
+### The relay
+
+Tools that cannot reach this Mac (a cloud agent, a CI runner) post the same JSON to an
+[ntfy](https://ntfy.sh) topic instead, set as **Widget relay** in Settings. Marquee checks it
+every 20 seconds. A message that is a JSON object or list becomes widgets; plain text becomes a
+widget named after the message title.
+
+```bash
+curl -d '{"id":"grok","label":"Grok Bot","value":"DONE","status":"ok","text":"Retro drafted","flash":true}' ntfy.sh/YOUR-TOPIC
+```
+
+### POST /v1/claude/activity
+
+Reports from Claude Code's hooks (`scripts/claude-hook.sh`), from this Mac only: `session`,
+`cwd`, `event` (`tool`, `done`, `prompt` or `stop`), `tool` and `detail`. The `claudelive` screen
+and the `claudehive` orbs show them.
 
 ## Webhooks
 
@@ -814,6 +865,35 @@ curl -X PUT $M/v1/settings -H 'Content-Type: application/json' -d '{"pagerdutyTo
 
 Network access and Require Key are changed from the menu, or with `serve --lan` and
 `--require-key`.
+
+### GET /v1/config
+
+The info screens' settings, as the Settings page (`/settings`) shows them. Each is one text file
+in the data folder. A secret's value is never returned, only whether it is set; `current` says
+what is in effect when the setting is not set.
+
+```json
+{"settings": [
+  {"id": "location", "title": "Location", "file": "weather.txt", "kind": "line", "example": "SW1A 1AA",
+   "programs": ["weather", "air", "flights", "sun", "grid"], "value": "SW1A 1AA", "set": true, "current": ""},
+  {"id": "railkey", "title": "Train times key", "file": "rail-key", "kind": "secret", "value": "", "set": false, "current": "not set"}
+]}
+```
+
+Ids: `location`, `worldclock`, `newsreel`, `news`, `markets`, `countdown`, `calendar`, `trains`,
+`railkey`, `grid`. `kind` is `line`, `lines` (newline-separated) or `secret`.
+
+### PUT /v1/config/{id}
+
+`{"value": "..."}`. The value is checked first (a place or postcode is looked up, a feed fetched,
+coins found on CoinGecko, a train key tried) and saved only if it passes: `200
+{"ok": true, "summary": "Westminster  51.50, -0.14  ·  grid region SW1A"}`, or `422 {"error": "..."}`
+with the reason. An empty value removes the file, restoring the default. If the program playing
+uses the setting, it restarts to show the change.
+
+```bash
+curl -X PUT $M/v1/config/location -H 'Content-Type: application/json' -d '{"value":"SW1A 1AA"}'
+```
 
 ---
 

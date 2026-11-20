@@ -82,7 +82,21 @@ func (s *Server) openapi(w http.ResponseWriter, r *http.Request) {
 				"get": op("App settings (local only)", nil),
 				"put": op("Change settings (local only): openAtLogin, pagerdutyToken (empty string removes it)", jsonBody(obj(map[string]any{"openAtLogin": boolean, "pagerdutyToken": str}))),
 			},
-			"/v1/keys/{id}": map[string]any{"delete": map[string]any{"summary": "Revoke an API key (local only)", "parameters": []any{map[string]any{"name": "id", "in": "path", "required": true, "schema": str}}, "responses": ok}},
+			"/v1/config": map[string]any{
+				"get": op("The info screens' settings (local only): {settings: [...]}, each with id, title, help, file, kind (line, lines, secret), example, programs, value (never for a secret), set, current", nil),
+			},
+			"/v1/config/{id}": map[string]any{
+				"put": map[string]any{"summary": "Check and save one setting (local only); an empty value restores the default. 422 with the reason when the value is refused; 200 with a summary of what was understood",
+					"parameters":  []any{map[string]any{"name": "id", "in": "path", "required": true, "schema": str}},
+					"requestBody": jsonBody(obj(map[string]any{"value": str})), "responses": ok},
+			},
+			"/v1/widgets": map[string]any{
+				"get":  op("The widgets board", nil),
+				"post": op("Post one widget or a list: id, label, value, unit, status (ok, warn, bad, info), text, ttl (seconds), flash. The same id replaces it", jsonBody(obj(map[string]any{"id": str, "label": str, "value": str, "unit": str, "status": str, "text": str, "ttl": num, "flash": boolean}, "id"))),
+			},
+			"/v1/widgets/{id}":    map[string]any{"delete": map[string]any{"summary": "Remove a widget (* for all)", "parameters": []any{map[string]any{"name": "id", "in": "path", "required": true, "schema": str}}, "responses": ok}},
+			"/v1/claude/activity": map[string]any{"post": op("Claude Code hook report (local only): session, cwd, event (tool, done, prompt, stop), tool, detail", jsonBody(obj(map[string]any{"session": str, "cwd": str, "event": str, "tool": str, "detail": str}, "event")))},
+			"/v1/keys/{id}":       map[string]any{"delete": map[string]any{"summary": "Revoke an API key (local only)", "parameters": []any{map[string]any{"name": "id", "in": "path", "required": true, "schema": str}}, "responses": ok}},
 		},
 	}
 	writeJSON(w, 200, spec)

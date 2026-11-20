@@ -7,7 +7,7 @@ import (
 	"fmt"
 	"math"
 	"net/http"
-	"net/url"
+	"strings"
 	"sync"
 	"time"
 
@@ -47,10 +47,17 @@ type weatherState struct {
 
 var ws weatherState
 
+// Home is where this Mac is, as a place string, for a board with no @location (nil or "" when
+// unknown).
+var Home func() string
+
 // Weather returns the cached "{icon} {place} {temp} {description}" and "{temp}" strings for a
 // location. It never blocks: a stale or new location starts a background refresh and the previous
 // value (or "…") is returned meanwhile.
 func Weather(location string) (text, temp string) {
+	if location == "" && Home != nil {
+		location = Home()
+	}
 	if location == "" {
 		return "set @location=City", "?"
 	}
@@ -97,20 +104,13 @@ func getJSON(u string, out any) error {
 // FetchWeather looks a place up and returns its current weather. Synchronous; for tests and
 // the background refresh.
 func FetchWeather(location string) (text, temp string, err error) {
-	var geo struct {
-		Results []struct {
-			Name      string  `json:"name"`
-			Latitude  float64 `json:"latitude"`
-			Longitude float64 `json:"longitude"`
-		} `json:"results"`
-	}
-	if err := getJSON(GeocodeURL+"?count=1&name="+url.QueryEscape(location), &geo); err != nil {
+	p, err := Geocode(location)
+	if err != nil {
+		if strings.HasPrefix(err.Error(), "no place called") {
+			return location + "?", "", nil
+		}
 		return "", "", err
 	}
-	if len(geo.Results) == 0 {
-		return location + "?", "", nil
-	}
-	p := geo.Results[0]
 	var fc struct {
 		Current struct {
 			Temperature float64 `json:"temperature_2m"`

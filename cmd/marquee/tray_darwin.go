@@ -60,10 +60,11 @@ func trayReady(a *App, listenErr error) {
 	}
 	systray.AddSeparator()
 	openRemote := systray.AddMenuItem("Open Remote", "The web remote in your browser")
+	openSettings := systray.AddMenuItem("Settings…", "Location, cities, news, coins, dates, trains: what the info screens show")
 
 	play := systray.AddMenuItem("Play", "")
 	groups := map[string]*systray.MenuItem{}
-	for _, g := range []struct{ key, title string }{{"playlist", "Playlists"}, {"panel", "Panels"}, {"news", "News & info"}, {"scene", "Scenes"}, {"audio", "Audio"}, {"camera", "Camera"}} {
+	for _, g := range []struct{ key, title string }{{"playlist", "Playlists"}, {"panel", "Panels"}, {"news", "News & info"}, {"claude", "Claude"}, {"diary", "Diary"}, {"scene", "Scenes"}, {"audio", "Audio"}, {"camera", "Camera"}} {
 		groups[g.key] = play.AddSubMenuItem(g.title, "")
 	}
 	type progItem struct {
@@ -253,6 +254,8 @@ func trayReady(a *App, listenErr error) {
 		select {
 		case <-openRemote.ClickedCh:
 			open(a.RemoteURL())
+		case <-openSettings.ClickedCh:
+			open(a.RemoteURL() + "/settings")
 		case <-pause.ClickedCh:
 			a.E.SetPaused(!pause.Checked())
 		case <-flip.ClickedCh:

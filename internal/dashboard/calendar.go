@@ -3,13 +3,14 @@ package dashboard
 import (
 	"fmt"
 	"image"
+	"image/color"
 	"strings"
 	"time"
 
 	"github.com/justynroberts/marquee/internal/feeds"
 )
 
-// Calendar is this month as a grid with ISO week numbers, today picked out in ink and bank
+// Calendar is this month as a grid with ISO week numbers, today picked out in txt and bank
 // holidays boxed, then next month small and the coming bank holidays. Holidays are the UK's
 // from gov.uk for the area in calendar.txt ("none" turns them off).
 type Calendar struct {
@@ -42,6 +43,8 @@ func (c *Calendar) Frame(t, dt float64, now time.Time) *image.RGBA {
 	return c.cache.get(fmt.Sprint(now.Format("2006-01-02"), area, len(hs), note), func(img *image.RGBA) { c.render(img, now, hs, note) })
 }
 
+var holidayBox = color.RGBA{82, 60, 22, 255}
+
 func dayKey(t time.Time) string { return t.Format("2006-01-02") }
 
 func (c *Calendar) render(img *image.RGBA, now time.Time, hs []feeds.Holiday, note string) {
@@ -50,19 +53,19 @@ func (c *Calendar) render(img *image.RGBA, now time.Time, hs []feeds.Holiday, no
 		hol[dayKey(h.Date)] = h.Title
 	}
 	month := time.Date(now.Year(), now.Month(), 1, 0, 0, 0, 0, now.Location())
-	text(img, pad, pad-8, strings.ToUpper(month.Format("January 2006")), 44, ink)
+	text(img, pad, pad-8, strings.ToUpper(month.Format("January 2006")), 44, txt)
 	monthGrid(img, month, now, hol, pad, 96, 150, 56, 34, true)
-	vline(img, 1210)
+	vrule(img, 1210)
 
 	x := 1250
 	next := month.AddDate(0, 1, 0)
-	caps(img, x, pad-4, next.Format("January 2006"), W-pad-x)
+	head(img, x, pad-4, next.Format("January 2006"), W-pad-x)
 	monthGrid(img, next, now, hol, x, 72, 84, 32, 20, false)
 
 	y := 300
-	caps(img, x, y, "bank holidays", W-pad-x)
+	head(img, x, y, "bank holidays", W-pad-x)
 	if note != "" {
-		text(img, float64(x), y+36, fit(note, 18, float64(W-pad-x)), 18, ink3)
+		text(img, float64(x), y+36, fit(note, 18, float64(W-pad-x)), 18, txt3)
 		return
 	}
 	today := time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, now.Location())
@@ -78,9 +81,9 @@ func (c *Calendar) render(img *image.RGBA, now time.Time, hs []feeds.Holiday, no
 		if days == 0 {
 			in = "TODAY"
 		}
-		text(img, float64(x), yy, when, 22, ink)
-		text(img, float64(x+170), yy, fit(strings.ToUpper(h.Title), 22, float64(W-pad-x-170-90)), 22, ink2)
-		text(img, float64(W-pad)-measure(in, 22), yy, in, 22, ink3)
+		text(img, float64(x), yy, when, 22, txt)
+		text(img, float64(x+170), yy, fit(strings.ToUpper(h.Title), 22, float64(W-pad-x-170-90)), 22, amber)
+		text(img, float64(W-pad)-measure(in, 22), yy, in, 22, txt2)
 		n++
 	}
 }
@@ -97,11 +100,14 @@ func monthGrid(img *image.RGBA, month, now time.Time, hol map[string]string, x, 
 		if !weeks {
 			d = d[:1]
 		}
-		c := ink3
+		c := cyan
+		if i >= 5 {
+			c = violet
+		}
 		text(img, float64(x0+i*cw), y, d, hdr, c)
 	}
 	if weeks {
-		text(img, float64(x), y, "WK", hdr, ink3)
+		text(img, float64(x), y, "WK", hdr, txt3)
 	}
 	y += hdr + 16
 	off := (int(month.Weekday()) + 6) % 7 // Monday = 0
@@ -116,20 +122,21 @@ func monthGrid(img *image.RGBA, month, now time.Time, hol map[string]string, x, 
 		day := time.Date(month.Year(), month.Month(), d, 0, 0, 0, 0, month.Location())
 		if weeks && (col == 0 || d == 1) {
 			_, wk := day.ISOWeek()
-			text(img, float64(x), cy, fmt.Sprintf("%02d", wk), px*2/3, ink3)
+			text(img, float64(x), cy, fmt.Sprintf("%02d", wk), px*2/3, txt3)
 		}
 		s := fmt.Sprint(d)
-		c := ink
+		c := txt
 		if col >= 5 {
-			c = ink2
+			c = violet // weekends
 		}
 		b := inkBox("00", px)
 		bx0, by0, bx1, by1 := cx-px/3, cy+b.Min.Y-px/4, cx+int(measure("00", px))+px/3, cy+b.Max.Y+px/4
 		if _, ok := hol[dayKey(day)]; ok {
-			rect(img, bx0, by0, bx1, by1, rule)
+			rect(img, bx0, by0, bx1, by1, holidayBox)
+			c = amber
 		}
 		if dayKey(day) == dayKey(now) {
-			rect(img, bx0, by0, bx1, by1, ink)
+			rect(img, bx0, by0, bx1, by1, amber)
 			c = bg
 		}
 		text(img, float64(cx), cy, s, px, c)

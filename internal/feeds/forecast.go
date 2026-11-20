@@ -3,6 +3,7 @@ package feeds
 import (
 	"fmt"
 	"net/url"
+	"regexp"
 	"strings"
 	"time"
 )
@@ -51,6 +52,12 @@ type Place struct {
 
 // Geocode looks a place name up with Open-Meteo.
 func Geocode(location string) (Place, error) {
+	if p, ok := parseCoords(location); ok {
+		return p, nil
+	}
+	if pc, ok := UKPostcode(location); ok {
+		return geocodePostcode(pc)
+	}
 	var geo struct {
 		Results []struct {
 			Name      string  `json:"name"`
@@ -66,6 +73,70 @@ func Geocode(location string) (Place, error) {
 	}
 	r := geo.Results[0]
 	return Place{r.Name, r.Latitude, r.Longitude}, nil
+}
+
+var postcodeRe = regexp.MustCompile(`^([A-Z]{1,2}[0-9][A-Z0-9]?) ?([0-9][A-Z]{2})$`)
+
+// UKPostcode recognises a full UK postcode ("SW1A 1AA", any case or spacing) and returns it
+// normalised.
+func UKPostcode(s string) (string, bool) {
+	m := postcodeRe.FindStringSubmatch(strings.ToUpper(strings.Join(strings.Fields(s), " ")))
+	if m == nil {
+		m = postcodeRe.FindStringSubmatch(strings.ToUpper(strings.ReplaceAll(s, " ", "")))
+	}
+	if m == nil {
+		return "", false
+	}
+	return m[1] + " " + m[2], true
+}
+
+// Outcode is a postcode's district: "SW1A" for "SW1A 1AA".
+func Outcode(postcode string) string {
+	o, _, _ := strings.Cut(postcode, " ")
+	return o
+}
+
+// geocodePostcode looks a UK postcode up with postcodes.io and names it by its parish, ward or
+// district.
+func geocodePostcode(pc string) (Place, error) {
+	var r struct {
+		Result struct {
+			Lat      float64 `json:"latitude"`
+			Lon      float64 `json:"longitude"`
+			Parish   string  `json:"parish"`
+			Ward     string  `json:"admin_ward"`
+			District string  `json:"admin_district"`
+		} `json:"result"`
+	}
+	if err := getJSON(PostcodesURL+"/postcodes/"+url.PathEscape(strings.ReplaceAll(pc, " ", "")), &r); err != nil {
+		return Place{}, fmt.Errorf("postcode %s: %v", pc, err)
+	}
+	name := r.Result.Parish
+	if name == "" || strings.Contains(name, "unparished") {
+		name = r.Result.Ward
+	}
+	if name == "" {
+		name = r.Result.District
+	}
+	return Place{Name: name, Latitude: r.Result.Lat, Longitude: r.Result.Lon}, nil
+}
+
+// parseCoords reads "@lat,lon|Name" (this Mac's own location, already known), which needs no
+// lookup.
+func parseCoords(s string) (Place, bool) {
+	if !strings.HasPrefix(s, "@") {
+		return Place{}, false
+	}
+	coords, name, _ := strings.Cut(s[1:], "|")
+	var p Place
+	if _, err := fmt.Sscanf(coords, "%g,%g", &p.Latitude, &p.Longitude); err != nil {
+		return Place{}, false
+	}
+	p.Name = name
+	if p.Name == "" {
+		p.Name = "Here"
+	}
+	return p, true
 }
 
 // FetchForecast looks a place up and fetches its forecast.

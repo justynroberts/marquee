@@ -122,6 +122,8 @@ func (p *fullRes) Frame(t, dt float64) *image.RGBA {
 	if p.seconds > 0 && t > p.seconds {
 		return nil
 	}
+	dashboard.UseFont(dashboard.FontFor(p.name))
+	defer dashboard.UseFont("")
 	return p.v.Frame(t, dt, time.Now())
 }
 
