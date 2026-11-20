@@ -546,6 +546,10 @@ shows a summary such as `2 triggered · 1 acknowledged` and `{incident}` the new
 
 ## Display controls
 
+Rest the pointer on Marquee's menu-bar icon and a live mini view of the panel opens at the top centre of the screen,
+with what is playing and whether a panel is connected. Everything renders without a panel, so
+this is also how to use Marquee with no panel plugged in (the web remote shows the same view).
+
 | Control | Menu | Command / API |
 |---|---|---|
 | Brightness, 5–100 % | Brightness | `POST /v1/brightness`, schedule `brightness N` |

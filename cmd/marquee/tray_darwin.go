@@ -47,7 +47,7 @@ func runTray() error {
 
 func trayReady(a *App, listenErr error) {
 	systray.SetTemplateIcon(trayIcon, trayIcon)
-	systray.SetTooltip("Marquee")
+	startHoverPreview(a) // the hover view replaces the tooltip
 
 	status := systray.AddMenuItem("Starting…", "")
 	status.Disable()

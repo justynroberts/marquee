@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+- README: a get-started guide up front, an animated diary and a gallery of real frames.
+- Web remote: long program names wrap inside their buttons instead of running into the next.
+- Hover over the menu-bar icon for a live mini view of the panel, so Marquee can be used and
+  watched with no panel connected.
 - Full-resolution `bigclock` and `worldclock` (cities from `world-clock.txt`), and `headlines`, a
   news wall of Hacker News and BBC News headlines in four slowly scrolling columns.
 - `flights` (aircraft overhead on a radar, from adsb.lol), `quakes` (USGS earthquakes on a world

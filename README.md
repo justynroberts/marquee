@@ -1,19 +1,58 @@
 # Marquee
 
-Marquee drives the Thermalright Trofeo Vision 9.16 USB LED panel (`0416:5408`, 1920 x 462) from a
-Mac. It plays animated scenes, audio visualisers, a scrolling message board with colour, emoji and
-effects, a live system dashboard, Now Playing with karaoke lyrics, a mirrored heads-up display, a
-news ticker, alerts, timers and pictures. It is one Go binary that is at once the menu-bar app, an
-HTTP server with a web remote, a command-line client and an MCP server for Claude. The USB driver
-is written from scratch ([docs/PROTOCOL.md](docs/PROTOCOL.md)); no vendor software is needed.
+**Turn a Thermalright Trofeo Vision 9.16 LED panel into a living display for your Mac:** clocks,
+weather, aircraft overhead, the planets, the news, your Claude Code day, a quill that writes a diary
+in real handwriting, LED-grid scenes and more than 90 other programs. One menu-bar app, no vendor
+software, and no panel needed to try it.
 
-## Install
+<p align="center"><img src="docs/images/diary.gif" alt="A quill writes a quotation in handwriting on a candle-lit page, signs it in red, and the ink soaks away" width="100%"></p>
 
-1. Download `Marquee-<version>.dmg` from
-   [GitHub Releases](https://github.com/justynroberts/marquee/releases/latest).
-2. Open the disk image and drag **Marquee** to **Applications**.
-3. Open Marquee from Applications. A dot-matrix **M** appears in the menu bar; there is no Dock
-   icon. Plug in the panel and it is picked up within a couple of seconds.
+<p align="center"><a href="https://github.com/justynroberts/marquee/releases/latest"><b>Download for macOS</b></a> ·
+<a href="#get-started-in-a-minute">Get started</a> · <a href="#gallery">Gallery</a> ·
+<a href="docs/GUIDE.md">Guide</a> · <a href="docs/API.md">API</a></p>
+
+## Get started in a minute
+
+1. **Install.** Download `Marquee-<version>.dmg` from
+   [Releases](https://github.com/justynroberts/marquee/releases/latest), open it and drag
+   **Marquee** to **Applications**. Signed and notarised; macOS 12 or later on Apple silicon.
+2. **Open it.** A dot-matrix **M** appears in the menu bar (there is no Dock icon). Plug in the
+   panel and it is picked up within a couple of seconds.
+3. **No panel? No problem.** Rest the pointer on the **M** and a live mini view of the display
+   opens at the top of the screen. Everything renders without hardware, so you can try every
+   program before the panel arrives.
+4. **Take the tour.** Menu → **Play → Playlists → showcase** walks through every feature with a
+   title card before each part. Or pick something from **News & info**, **Claude**, **Diary** or
+   **Scenes**.
+5. **Open the remote.** Menu → **Open Remote** (<http://127.0.0.1:7781>) plays programs, flashes
+   alerts, edits the message board, starts timers, lets you draw and shows a live preview.
+6. **Make it yours.** Menu → **Settings…** sets your location, cities, feeds, coins, dates and
+   station, and checks each one as you save it. Leave the location empty to use where you are.
+7. **Let Claude drive it.** `claude mcp add marquee -- /Applications/Marquee.app/Contents/MacOS/marquee mcp`
+   and ask Claude to flash a build result, play the weather or build you a playlist.
+
+<p align="center"><img src="docs/images/remote.jpg" alt="The web remote: a live preview of the panel above the programs, alerts and the message board" width="100%"><br><sub>The web remote, with the live preview at the top</sub></p>
+
+## Gallery
+
+Every image here is a real frame from Marquee at the panel's 1920 x 462.
+
+<table>
+<tr><td width="50%"><img src="docs/images/bigclock.jpg" alt="<code>bigclock</code>: the time, as large as the panel allows"><br><sub><code>bigclock</code>: the time, as large as the panel allows</sub></td><td width="50%"><img src="docs/images/weather.jpg" alt="<code>weather</code>: now, the next 24 hours and the days ahead"><br><sub><code>weather</code>: now, the next 24 hours and the days ahead</sub></td></tr>
+<tr><td width="50%"><img src="docs/images/flights.jpg" alt="<code>flights</code>: aircraft overhead on a live radar"><br><sub><code>flights</code>: aircraft overhead on a live radar</sub></td><td width="50%"><img src="docs/images/claudelimits.jpg" alt="<code>claudelimits</code>: how much of your Claude plan is left"><br><sub><code>claudelimits</code>: how much of your Claude plan is left</sub></td></tr>
+<tr><td width="50%"><img src="docs/images/naturediary.jpg" alt="<code>naturediary</code>: a quill keeps a nature diary"><br><sub><code>naturediary</code>: a quill keeps a nature diary</sub></td><td width="50%"><img src="docs/images/orrery.jpg" alt="<code>orrery</code>: the planets right now"><br><sub><code>orrery</code>: the planets right now</sub></td></tr>
+<tr><td width="50%"><img src="docs/images/quakes.jpg" alt="<code>quakes</code>: the world's earthquakes, live from the USGS"><br><sub><code>quakes</code>: the world's earthquakes, live from the USGS</sub></td><td width="50%"><img src="docs/images/moon.jpg" alt="<code>moon</code>: tonight's phase and the month ahead"><br><sub><code>moon</code>: tonight's phase and the month ahead</sub></td></tr>
+<tr><td width="50%"><img src="docs/images/grid.jpg" alt="<code>grid</code>: how green the electricity is right now"><br><sub><code>grid</code>: how green the electricity is right now</sub></td><td width="50%"><img src="docs/images/launches.jpg" alt="<code>launches</code>: rocket launches with a live countdown"><br><sub><code>launches</code>: rocket launches with a live countdown</sub></td></tr>
+<tr><td width="50%"><img src="docs/images/iss.jpg" alt="<code>iss</code>: the space station's track and distance from you"><br><sub><code>iss</code>: the space station's track and distance from you</sub></td><td width="50%"><img src="docs/images/fx.jpg" alt="<code>fx</code>: exchange rates and 30 days of moves"><br><sub><code>fx</code>: exchange rates and 30 days of moves</sub></td></tr>
+<tr><td width="50%"><img src="docs/images/sun.jpg" alt="<code>sun</code>: dawn to dusk and the sun's path today"><br><sub><code>sun</code>: dawn to dusk and the sun's path today</sub></td><td width="50%"><img src="docs/images/warroom.jpg" alt="<code>warroom</code>: a cold-war simulation with no winner"><br><sub><code>warroom</code>: a cold-war simulation with no winner</sub></td></tr>
+<tr><td width="50%"><img src="docs/images/aquarium.jpg" alt="<code>aquarium</code>: one of the LED-grid scenes"><br><sub><code>aquarium</code>: one of the LED-grid scenes</sub></td><td width="50%"><img src="docs/images/fire.jpg" alt="<code>fire</code>: round LEDs, 275 x 66 of them"><br><sub><code>fire</code>: round LEDs, 275 x 66 of them</sub></td></tr>
+<tr><td width="50%"><img src="docs/images/matrix.jpg" alt="<code>matrix</code>"><br><sub><code>matrix</code></sub></td><td width="50%"><img src="docs/images/plasma.jpg" alt="<code>plasma</code>"><br><sub><code>plasma</code></sub></td></tr>
+<tr><td width="50%"><img src="docs/images/calendar.jpg" alt="<code>calendar</code>: the month, with bank holidays"><br><sub><code>calendar</code>: the month, with bank holidays</sub></td><td width="50%"><img src="docs/images/worldclock.jpg" alt="<code>worldclock</code>: your cities, with day and night"><br><sub><code>worldclock</code>: your cities, with day and night</sub></td></tr>
+<tr><td width="50%"><img src="docs/images/air.jpg" alt="<code>air</code>: air quality and pollen"><br><sub><code>air</code>: air quality and pollen</sub></td><td width="50%"><img src="docs/images/claudecity.jpg" alt="<code>claudecity</code>: your week of Claude Code as a skyline"><br><sub><code>claudecity</code>: your week of Claude Code as a skyline</sub></td></tr>
+<tr><td width="50%"><img src="docs/images/headlines.jpg" alt="<code>headlines</code>: a slowly scrolling news wall"><br><sub><code>headlines</code>: a slowly scrolling news wall</sub></td><td width="50%"><img src="docs/images/daynight.jpg" alt="<code>daynight</code>: the day/night line across the world"><br><sub><code>daynight</code>: the day/night line across the world</sub></td></tr>
+</table>
+
+## Permissions
 
 Requires macOS 12 or later on Apple silicon. The app is signed and notarised, so it opens without
 a Gatekeeper warning.
@@ -32,16 +71,13 @@ If you said no by mistake, see [Troubleshooting](docs/GUIDE.md#troubleshooting).
 
 Marquee checks GitHub Releases once a day. When a newer version is out, the menu shows **Download Marquee x.y.z…**, which downloads the signed disk image; **Check for Updates…** checks now.
 
-## Quick start
+## Everyday use
 
-- **Menu bar → Play** lists everything that can play, grouped into Playlists, Panels, Scenes and
-  Audio. Start with **Playlists → showcase**, a guided tour of every feature with a title card
-  before each part.
-- **Open Remote** opens the web remote at <http://127.0.0.1:7781>: play programs, flash an
-  alert, add a board message, start a timer, draw, upload a picture and watch a live preview.
+- **Menu bar → Play** lists everything that can play, grouped into Playlists, Panels, News & info,
+  Claude, Diary, Scenes, Audio and Camera.
 - The rest of the menu: Brightness, Pause, Upside Down (for a panel mounted the other way up),
   HUD Mode, HUD Lyrics, Clear Alert, Allow Other Devices, Require Key on This Mac, New API Key…,
-  API Reference, Open at Login and Show Data Folder.
+  Settings…, API Reference, Open at Login and Show Data Folder.
 
 Your files live in `~/Library/Application Support/Marquee` (messages, schedule, playlists, media,
 keys). Logs go to `~/Library/Logs/Marquee/marquee.log`.
@@ -226,6 +262,8 @@ draws them, and resampling and line drawing are ports of Pillow's own code.
 Includes FreeType 2.14.3 (FreeType Licence), HarfBuzz 14.5.0 (Old MIT), algorithms ported from
 Pillow 13 (HPND), and a JPEG encoder derived from Go's `image/jpeg` (BSD). Emoji: Apple Color Emoji
 from the system on macOS; [Twemoji](https://github.com/jdecked/twemoji) (CC-BY 4.0) elsewhere.
+Handwriting in the diaries: [Homemade Apple](https://fonts.google.com/specimen/Homemade+Apple)
+(Apache 2.0) and [Meddon](https://fonts.google.com/specimen/Meddon) (SIL OFL).
 Weather from [Open-Meteo](https://open-meteo.com); lyrics from [LRCLIB](https://lrclib.net);
 aircraft from [adsb.lol](https://adsb.lol) (ODbL); earthquakes from the USGS; "on this day" from
 Wikipedia (CC BY-SA); prices from CoinGecko; air quality from Open-Meteo (CAMS); bank holidays

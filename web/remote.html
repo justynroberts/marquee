@@ -31,7 +31,7 @@ section { padding: 16px; }
 section + section { border-left: 1px solid var(--rule); }
 h2 { margin: 0 0 8px; }
 .programs { display: grid; grid-template-columns: repeat(auto-fill, minmax(112px, 1fr)); border-top: 1px solid var(--rule); border-left: 1px solid var(--rule); }
-.programs button { text-align: left; border: 0; border-right: 1px solid var(--rule); border-bottom: 1px solid var(--rule); border-radius: 0; height: 40px; padding: 0 8px; }
+.programs button { text-align: left; border: 0; border-right: 1px solid var(--rule); border-bottom: 1px solid var(--rule); border-radius: 0; min-height: 40px; padding: 4px 8px; overflow-wrap: anywhere; line-height: 1.25; }
 .programs button[aria-pressed="true"] { color: var(--ink); background: var(--raised); box-shadow: inset 2px 0 0 var(--accent); }
 .programs .group { grid-column: 1 / -1; padding: 8px 0 4px; border-bottom: 1px solid var(--rule); border-right: 1px solid var(--rule); }
 button, input, textarea, select { font: inherit; color: var(--ink); }
