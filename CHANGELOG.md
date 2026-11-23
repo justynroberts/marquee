@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+- A **Clocks** section with four new full-resolution clocks: `flipclock` (split-flap), `nixieclock`
+  (nixie tubes), `dialclock` (a radio tuning dial) and `swarmclock` (particles); `bigclock`,
+  `worldclock` and `wordclock` move into it.
 - README: a get-started guide up front, an animated diary and a gallery of real frames.
 - Web remote: long program names wrap inside their buttons instead of running into the next.
 - Hover over the menu-bar icon for a live mini view of the panel, so Marquee can be used and

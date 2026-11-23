@@ -87,7 +87,7 @@ var fontFamilies = map[string][]struct {
 }
 
 var programFonts = map[string]string{
-	"bigclock": "din", "worldclock": "din", "progress": "din", "pomodoro": "din", "fx": "din",
+	"bigclock": "din", "flipclock": "din", "dialclock": "din", "swarmclock": "din", "worldclock": "din", "progress": "din", "pomodoro": "din", "fx": "din",
 	"markets": "din", "countdown": "din", "netwatch": "din", "claudemeter": "din", "claudelimits": "din", "claudediary": "hand", "diary": "hand", "commonplace": "hand", "naturediary": "hand", "newsdiary": "hand",
 	"onthisday": "serif", "newsreel": "serif", "headlines": "serif", "moon": "serif",
 	"weather": "slab", "rain": "slab", "sun": "slab", "air": "slab",

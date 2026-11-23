@@ -52,6 +52,10 @@ brightness and other display settings across restarts. `GET /v1/programs` lists 
 | `dashboard` | Clock, CPU (big percentage, two-minute trace, per-core bars), memory, network and machine details |
 | `interference` | Three drifting wave sources drawn as contour bands, with a clock and fps label |
 | `bigclock` | Hours and minutes as large as the panel allows, seconds beside them, the date, week and zone on the left, and a seconds sweep along the bottom |
+| `flipclock` | A split-flap board: big tiles for the hours and minutes, small ones for the seconds, and each flap falls over its hinge, darkening as it turns, when its digit changes |
+| `nixieclock` | Six nixie tubes: the lit numeral glows orange in front of the dark stack of the other nine, behind the mesh, with neon dots between the pairs blinking the seconds |
+| `dialclock` | The day as a radio tuning dial: a backlit scale of hours slides past a fixed red needle, with the times of day banded along the top and a fine scale of seconds beneath |
+| `swarmclock` | The time drawn in four thousand particles that hang breathing in the shape of the digits, then burst and stream to the new time when the minute turns; sixty dots count the seconds |
 | `worldclock` | One column per city: time (dimmed at night), date, offset from here, and a 24-hour strip with daylight lit |
 | `weather` | Temperature and conditions now, a 24-hour temperature curve over rain-chance bars, and five days ahead. Readings of 30°C and up are in vermilion |
 | `flights` | Aircraft overhead: a radar that zooms in on busy skies, planes moved on between fetches by their own speed and track, and the nearest airborne ones listed with type, altitude, speed, distance and bearing. An emergency squawk is in vermilion |

@@ -203,12 +203,12 @@ async function api(method, path, body, isForm = false) {
   return data;
 }
 
-const GROUP_TITLES = { playlist: "Playlists", panel: "Panels", news: "News & info", claude: "Claude", diary: "Diary", scene: "Scenes", audio: "Audio", camera: "Camera", media: "Media" };
+const GROUP_TITLES = { playlist: "Playlists", panel: "Panels", clocks: "Clocks", news: "News & info", claude: "Claude", diary: "Diary", scene: "Scenes", audio: "Audio", camera: "Camera", media: "Media" };
 let state = null;
 function renderPrograms() {
   const box = $("programs");
   box.textContent = "";
-  for (const group of ["playlist", "panel", "news", "claude", "diary", "scene", "audio", "camera", "media"]) {
+  for (const group of ["playlist", "panel", "clocks", "news", "claude", "diary", "scene", "audio", "camera", "media"]) {
     const items = state.programs.filter((p) => p.group === group);
     if (!items.length) continue;
     const g = document.createElement("div");

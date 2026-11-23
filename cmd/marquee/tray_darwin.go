@@ -64,7 +64,7 @@ func trayReady(a *App, listenErr error) {
 
 	play := systray.AddMenuItem("Play", "")
 	groups := map[string]*systray.MenuItem{}
-	for _, g := range []struct{ key, title string }{{"playlist", "Playlists"}, {"panel", "Panels"}, {"news", "News & info"}, {"claude", "Claude"}, {"diary", "Diary"}, {"scene", "Scenes"}, {"audio", "Audio"}, {"camera", "Camera"}} {
+	for _, g := range []struct{ key, title string }{{"playlist", "Playlists"}, {"panel", "Panels"}, {"clocks", "Clocks"}, {"news", "News & info"}, {"claude", "Claude"}, {"diary", "Diary"}, {"scene", "Scenes"}, {"audio", "Audio"}, {"camera", "Camera"}} {
 		groups[g.key] = play.AddSubMenuItem(g.title, "")
 	}
 	type progItem struct {

@@ -184,7 +184,7 @@ curl $M/v1/programs
 ```
 
 Groups are `playlist` (built-in, custom and `showcase`), `panel` (`board`, `draw`, `news`, `hud`),
-`news` (news and info screens), `claude` (the Claude Code screens), `diary` (`claudediary`, `diary`, `commonplace`, `naturediary` and `newsdiary`, the handwritten pages), `scene`, `audio`, `camera` and
+`clocks` (`bigclock`, `worldclock`, `wordclock`, `flipclock`, `nixieclock`, `dialclock` and `swarmclock`), `news` (news and info screens), `claude` (the Claude Code screens), `diary` (`claudediary`, `diary`, `commonplace`, `naturediary` and `newsdiary`, the handwritten pages), `scene`, `audio`, `camera` and
 `media`.
 
 ### GET /v1/fonts
@@ -209,7 +209,7 @@ curl $M/v1/fonts
 
 | Field | Type | |
 |---|---|---|
-| `program` | string, required | A name from `/v1/programs`: a playlist, `showcase`, `board`, `draw`, `news`, `hud`, a scene, an audio visualiser, `nowplaying`, `karaoke`, `dashboard`, `interference`, `bigclock`, `worldclock`, `headlines`, `newsreel`, `newsreel:NAME`, `flights`, `quakes`, `onthisday`, `moon`, `countdown`, `wordclock`, `calendar`, `markets`, `air`, `trains`, `sun`, `grid`, `aurora`, `warroom`, `claude`, `claudehive`, `claudecity`, `claudeflow`, `claudeclock`, `claudeorbit`, `claudeburst`, `claudemeter`, `claudelimits`, `claudediary`, `diary`, `commonplace`, `naturediary`, `newsdiary`, `progress`, `pomodoro`, `netwatch`, `daynight`, `orrery`, `iss`, `launches`, `rain`, `status`, `fx`, `weather`, `ascii` or `media:FILE` |
+| `program` | string, required | A name from `/v1/programs`: a playlist, `showcase`, `board`, `draw`, `news`, `hud`, a scene, an audio visualiser, `nowplaying`, `karaoke`, `dashboard`, `interference`, `bigclock`, `worldclock`, `flipclock`, `nixieclock`, `dialclock`, `swarmclock`, `headlines`, `newsreel`, `newsreel:NAME`, `flights`, `quakes`, `onthisday`, `moon`, `countdown`, `wordclock`, `calendar`, `markets`, `air`, `trains`, `sun`, `grid`, `aurora`, `warroom`, `claude`, `claudehive`, `claudecity`, `claudeflow`, `claudeclock`, `claudeorbit`, `claudeburst`, `claudemeter`, `claudelimits`, `claudediary`, `diary`, `commonplace`, `naturediary`, `newsdiary`, `progress`, `pomodoro`, `netwatch`, `daynight`, `orrery`, `iss`, `launches`, `rain`, `status`, `fx`, `weather`, `ascii` or `media:FILE` |
 
 ```bash
 curl -X POST $M/v1/play -H 'Content-Type: application/json' -d '{"program":"matrix"}'
@@ -577,7 +577,7 @@ Creates or replaces a custom playlist, saved in `playlists.json`.
 
 | Field | Type | |
 |---|---|---|
-| `items` | array of strings, required | 1–100 program names: scenes, audio visualisers, `board`, `news`, `nowplaying`, `karaoke`, `dashboard`, `interference`, `bigclock`, `worldclock`, `headlines`, `newsreel`, `newsreel:NAME`, `flights`, `quakes`, `onthisday`, `moon`, `countdown`, `wordclock`, `calendar`, `markets`, `air`, `trains`, `sun`, `grid`, `aurora`, `warroom`, `claude`, `claudehive`, `claudecity`, `claudeflow`, `claudeclock`, `claudeorbit`, `claudeburst`, `claudemeter`, `claudelimits`, `claudediary`, `diary`, `commonplace`, `naturediary`, `newsdiary`, `progress`, `pomodoro`, `netwatch`, `daynight`, `orrery`, `iss`, `launches`, `rain`, `status`, `fx`, `weather`, `ascii`, `hud`, `media:FILE` |
+| `items` | array of strings, required | 1–100 program names: scenes, audio visualisers, `board`, `news`, `nowplaying`, `karaoke`, `dashboard`, `interference`, `bigclock`, `worldclock`, `flipclock`, `nixieclock`, `dialclock`, `swarmclock`, `headlines`, `newsreel`, `newsreel:NAME`, `flights`, `quakes`, `onthisday`, `moon`, `countdown`, `wordclock`, `calendar`, `markets`, `air`, `trains`, `sun`, `grid`, `aurora`, `warroom`, `claude`, `claudehive`, `claudecity`, `claudeflow`, `claudeclock`, `claudeorbit`, `claudeburst`, `claudemeter`, `claudelimits`, `claudediary`, `diary`, `commonplace`, `naturediary`, `newsdiary`, `progress`, `pomodoro`, `netwatch`, `daynight`, `orrery`, `iss`, `launches`, `rain`, `status`, `fx`, `weather`, `ascii`, `hud`, `media:FILE` |
 | `seconds` | number | Seconds per item, 0–3600; 0 or missing uses the default (20) |
 
 `board` and `news` items run for one full scroll rather than `seconds`. Names are lowercase

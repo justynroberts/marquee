@@ -118,7 +118,7 @@ func (e *Engine) DeletePlaylist(name string) error {
 func reservedName(n string) bool {
 	switch n {
 	case "board", "draw", "news", "push", "showcase", "nowplaying", "karaoke", "hud", "dashboard", "interference",
-		"bigclock", "worldclock", "headlines", "weather", "ascii", "newsreel",
+		"bigclock", "worldclock", "flipclock", "nixieclock", "dialclock", "swarmclock", "headlines", "weather", "ascii", "newsreel",
 		"flights", "quakes", "onthisday", "moon", "countdown", "markets", "calendar", "air", "wordclock", "trains", "sun", "grid", "aurora", "warroom",
 		"claude", "claudelive", "widgets", "claudehive", "claudecity", "claudeflow", "claudeclock", "claudeorbit", "claudeburst", "claudemeter", "claudelimits", "claudediary", "diary", "commonplace", "naturediary", "newsdiary", "progress", "pomodoro", "daynight", "orrery", "netwatch", "iss", "launches", "rain", "status", "fx":
 		return true

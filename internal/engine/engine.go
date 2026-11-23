@@ -234,9 +234,13 @@ func (e *Engine) Programs() []ProgramInfo {
 	out = append(out, ProgramInfo{Name: "nowplaying", Group: "scene", Description: "Now playing in Music or Spotify: artwork, title, progress (native resolution)"})
 	out = append(out, ProgramInfo{Name: "karaoke", Group: "scene", Description: "Synced lyrics for what Music or Spotify is playing, each line lighting up as it is sung"})
 	out = append(out, ProgramInfo{Name: "interference", Group: "scene", Description: "Live-stream interference field: drifting wave sources as contour bands (native resolution)"})
-	out = append(out, ProgramInfo{Name: "bigclock", Group: "scene", Description: "A full-resolution clock: hours and minutes as large as the panel allows, the date beside them"},
+	out = append(out, ProgramInfo{Name: "bigclock", Group: "clocks", Description: "A full-resolution clock: hours and minutes as large as the panel allows, the date beside them"},
 		ProgramInfo{Name: "calendar", Group: "scene", Description: "This month and next with week numbers and UK bank holidays (area in calendar.txt)"},
-		ProgramInfo{Name: "wordclock", Group: "scene", Description: "The time spelled out in a grid of letters"},
+		ProgramInfo{Name: "wordclock", Group: "clocks", Description: "The time spelled out in a grid of letters"},
+		ProgramInfo{Name: "flipclock", Group: "clocks", Description: "A split-flap board: each flap falls over its hinge as the digit turns"},
+		ProgramInfo{Name: "nixieclock", Group: "clocks", Description: "Six nixie tubes: orange numerals glowing in front of the dark stack, neon dots blinking the seconds"},
+		ProgramInfo{Name: "dialclock", Group: "clocks", Description: "The day as a radio tuning dial: the hours slide past a red needle, a fine scale of seconds beneath"},
+		ProgramInfo{Name: "swarmclock", Group: "clocks", Description: "The time in thousands of particles that burst and stream to the new minute"},
 		ProgramInfo{Name: "countdown", Group: "scene", Description: "Days to go until the dates in countdown.txt (Christmas and New Year by default)"},
 		ProgramInfo{Name: "warroom", Group: "scene", Description: "A cold-war strategic simulation on a vector map: DEFCON rises, missiles fly, and every run ends with no winner"},
 		ProgramInfo{Name: "claude", Group: "claude", Description: "Claude Code on this Mac: today's tokens, output by hour, the last seven days, and the sessions running now with how full each is"},
@@ -262,7 +266,7 @@ func (e *Engine) Programs() []ProgramInfo {
 		ProgramInfo{Name: "netwatch", Group: "scene", Description: "Internet health: latency and loss to your router, Cloudflare and Google DNS, and DNS lookup time"},
 		ProgramInfo{Name: "sun", Group: "scene", Description: "Today's daylight where you are: the sun's path, dawn, sunrise, sunset, dusk and how the day is changing"},
 		ProgramInfo{Name: "moon", Group: "scene", Description: "Tonight's moon: its phase drawn large, the next full and new moons, the coming 30 nights"},
-		ProgramInfo{Name: "worldclock", Group: "scene", Description: "Clocks for several cities with day/night strips (cities in world-clock.txt)"},
+		ProgramInfo{Name: "worldclock", Group: "clocks", Description: "Clocks for several cities with day/night strips (cities in world-clock.txt)"},
 		ProgramInfo{Name: "headlines", Group: "news", Description: "A news wall: every headline in small type, four slowly scrolling columns (native resolution)"},
 		ProgramInfo{Name: "flights", Group: "news", Description: "Aircraft overhead: a radar and the nearest planes, live from adsb.lol (place in weather.txt)"},
 		ProgramInfo{Name: "quakes", Group: "news", Description: "Earthquakes worldwide in the last day and week on a map, from the USGS"},
@@ -420,6 +424,14 @@ func (e *Engine) makeScene(name string, seconds float64) (Program, error) {
 		return &fullRes{name: name, v: dashboard.NewTrains(e.trainStation, e.trainToken), seconds: seconds}, nil
 	case "wordclock":
 		return &fullRes{name: name, v: dashboard.NewWordClock(), seconds: seconds}, nil
+	case "flipclock":
+		return &fullRes{name: name, v: dashboard.NewFlipClock(), seconds: seconds}, nil
+	case "nixieclock":
+		return &fullRes{name: name, v: dashboard.NewNixieClock(), seconds: seconds}, nil
+	case "dialclock":
+		return &fullRes{name: name, v: dashboard.NewDialClock(), seconds: seconds}, nil
+	case "swarmclock":
+		return &fullRes{name: name, v: dashboard.NewSwarmClock(), seconds: seconds}, nil
 	case "countdown":
 		return &fullRes{name: name, v: dashboard.LoadCountdown(filepath.Join(e.paths.Dir, "countdown.txt")), seconds: seconds}, nil
 	}

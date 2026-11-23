@@ -98,7 +98,9 @@ keys). Logs go to `~/Library/Logs/Marquee/marquee.log`.
 - **Interference** (`interference`): drifting wave sources drawn as contour bands, full
   resolution.
 - **Clocks** (`bigclock`, `worldclock`): a full-resolution clock as large as the panel allows, and
-  clocks for several cities with day/night strips (`world-clock.txt` picks the cities).
+  clocks for several cities with day/night strips (`world-clock.txt` picks the cities). Four more
+  in the **Clocks** menu: `flipclock` (a split-flap board), `nixieclock` (glowing nixie tubes),
+  `dialclock` (a radio tuning dial sliding past a needle) and `swarmclock` (the time in particles).
 - **Weather** (`weather`): now, the next 24 hours and the coming days from
   [Open-Meteo](https://open-meteo.com), for the place in `weather.txt`.
 - **Headlines** (`headlines`): a news wall, every headline in small type in four slowly scrolling
